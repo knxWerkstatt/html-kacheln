@@ -2,8 +2,11 @@
 <!--
   ZisterneKachel - Darstellung (HTML-SDK), Stufe 1: nur Anzeige
   Hannes Hacker - KNX Werkstatt
-  Version: v1
-  Erstellt: 10.11.2026, 11:23
+  Version: v2
+  Erstellt: 10.11.2026, 12:40
+  v2: fremde Nachrichten werden verworfen (Felder leerten sich bei Berührung),
+      kein eigenes Scrollen mehr (Wischgeste geht an die Symcon-Seite),
+      Verbraucher und Brunnen entfernt, Leitungen mit Pfeil in Flussrichtung.
   Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v1.
   Die Kachel rechnet nicht: Zustand, Leistungssumme und Polarität kommen fertig vom Modul.
   Farben sind themenneutral (abgeleitet von currentColor), damit helles und dunkles Symcon-Theme passen.
@@ -14,7 +17,7 @@
 <style>
 :root{
   --good:#22b35e; --warn:#e9a100; --crit:#e5484d; --accent:#00a99d;
-  --water:#2f8fd8; --water2:#5fb2ee; --earth:#b9a68a;
+  --water:#2f8fd8; --water2:#5fb2ee;
   --muted:color-mix(in srgb,currentColor 60%,transparent);
   --line:color-mix(in srgb,currentColor 18%,transparent);
   --pipe:color-mix(in srgb,currentColor 22%,transparent);
@@ -23,23 +26,26 @@
 /* Schrift und Textfarbe: Symcon-Theme wird nicht übernommen (zu prüfen), daher Systemschrift und OS-Farbschema */
 html{color:#1d2733}
 @media (prefers-color-scheme:dark){html{color:#e6ecf2}}
-html,body{margin:0;height:100%;background:transparent;font-size:14px;
+html,body{margin:0;background:transparent;font-size:14px;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
-body{overflow:auto;box-sizing:border-box;padding:4px}
+/* Kein eigenes Scrollen: Wischgesten sollen bei der Symcon-Seite ankommen */
+html,body{overflow:hidden}
+body{box-sizing:border-box;padding:4px}
 
 /* Layout: breit = Brunnenpumpe | Zisterne | Hauswasserwerk, schmal (< 640 px) = vertikal */
 .tile{container:tile / inline-size}
-.flow{display:grid;grid-template-columns:minmax(0,1fr) 26px minmax(0,1.1fr) 26px minmax(0,1fr);
+.flow{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1.1fr) 34px minmax(0,1fr);
   grid-template-areas:"brunnen pB tank pA druck";align-items:stretch}
-#sink{grid-area:sink} #pT{grid-area:pT} #bDruck{grid-area:druck} #pA{grid-area:pA}
-#bTank{grid-area:tank} #pB{grid-area:pB} #bBrunnen{grid-area:brunnen} #pL{grid-area:pL} #well{grid-area:well}
-#sink,#pT,#pL,#well{display:none}
+#bDruck{grid-area:druck} #pA{grid-area:pA} #bTank{grid-area:tank} #pB{grid-area:pB} #bBrunnen{grid-area:brunnen}
 
-/* Leitungen, breit: waagrecht, Fluss nach rechts */
-.pipe{align-self:center;height:8px;border-radius:4px;background:var(--pipe);position:relative;overflow:hidden}
-.pipe::after{content:"";position:absolute;inset:0;opacity:0;
+/* Leitung mit Pfeil in Flussrichtung; breit: waagrecht, Pfeil nach rechts */
+.pipe{align-self:center;display:flex;align-items:center;padding:0 3px}
+.pipe .bar{flex:1;height:8px;border-radius:4px 0 0 4px;background:var(--pipe);position:relative;overflow:hidden}
+.pipe .head{flex:none;width:10px;height:16px;background:var(--pipe);clip-path:polygon(0 0,100% 50%,0 100%)}
+.pipe.on .head{background:var(--water2)}
+.pipe .bar::after{content:"";position:absolute;inset:0;opacity:0;
   background:repeating-linear-gradient(90deg,var(--water2) 0 8px,transparent 8px 16px);background-size:16px 100%}
-.pipe.on::after{opacity:1;animation:right .6s linear infinite}
+.pipe.on .bar::after{opacity:1;animation:right .6s linear infinite}
 @keyframes right{to{background-position:16px 0}}
 @keyframes up{to{background-position:0 -16px}}
 
@@ -97,20 +103,17 @@ body{overflow:auto;box-sizing:border-box;padding:4px}
 #level{transition:transform .6s ease}
 .tick{fill:var(--muted);font-size:8px}
 
-.end{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--muted);padding:4px 0}
-.end svg{width:28px;height:20px}
-#well{border-radius:8px;padding:8px;background:
-  repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--earth) 35%,transparent) 6px 7px),
-  color-mix(in srgb,var(--earth) 18%,transparent)}
 
 /* Schmal: vertikal, Wasser von unten nach oben */
 @container tile (max-width:639px){
   .flow{grid-template-columns:minmax(0,1fr);
-    grid-template-areas:"sink" "pT" "druck" "pA" "tank" "pB" "brunnen" "pL" "well"}
-  #sink,#pT,#pL,#well{display:flex}
-  .pipe{width:8px;height:22px;justify-self:center}
-  .pipe::after{background:repeating-linear-gradient(0deg,var(--water2) 0 8px,transparent 8px 16px);background-size:100% 16px}
-  .pipe.on::after{animation-name:up}
+    grid-template-areas:"druck" "pA" "tank" "pB" "brunnen"}
+  /* schmal: senkrecht, Pfeil nach oben */
+  .pipe{flex-direction:column-reverse;justify-self:center;height:34px;padding:3px 0}
+  .pipe .bar{flex:1;width:8px;height:auto;border-radius:0 0 4px 4px}
+  .pipe .head{width:16px;height:10px;clip-path:polygon(50% 0,100% 100%,0 100%)}
+  .pipe .bar::after{background:repeating-linear-gradient(0deg,var(--water2) 0 8px,transparent 8px 16px);background-size:100% 16px}
+  .pipe.on .bar::after{animation-name:up}
   .tankbody{flex-direction:row;align-items:center}
   .tankbody svg{max-width:130px;flex:0 0 42%}
   .big{text-align:left;margin-bottom:4px}
@@ -121,12 +124,6 @@ body{overflow:auto;box-sizing:border-box;padding:4px}
 <body>
 <section class="tile" aria-label="Zisterne">
   <div class="flow">
-    <div class="end" id="sink">
-      <svg viewBox="0 0 24 20" aria-hidden="true"><path d="M12 2 V14 M7 7 L12 2 L17 7 M5 18 H19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      zu Haus und Garten
-    </div>
-    <div class="pipe" id="pT"></div>
-
     <!-- Hauswasserwerk -->
     <div class="box" id="bDruck">
       <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
@@ -141,7 +138,7 @@ body{overflow:auto;box-sizing:border-box;padding:4px}
       </div>
       <div class="fresh" id="fDruck"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
     </div>
-    <div class="pipe" id="pA"></div>
+    <div class="pipe" id="pA" aria-hidden="true"><span class="bar"></span><span class="head"></span></div>
 
     <!-- Zisterne -->
     <div class="box" id="bTank">
@@ -172,7 +169,7 @@ body{overflow:auto;box-sizing:border-box;padding:4px}
       </div>
       <div class="fresh" id="fTank"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
     </div>
-    <div class="pipe" id="pB"></div>
+    <div class="pipe" id="pB" aria-hidden="true"><span class="bar"></span><span class="head"></span></div>
 
     <!-- Brunnenpumpe -->
     <div class="box" id="bBrunnen">
@@ -191,12 +188,6 @@ body{overflow:auto;box-sizing:border-box;padding:4px}
         <div class="row"><span>Leistung aktuell</span><span class="v" id="bPow">–</span></div>
       </div>
       <div class="fresh" id="fBrunnen"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
-    </div>
-    <div class="pipe" id="pL"></div>
-
-    <div class="end" id="well">
-      <svg viewBox="0 0 28 20" aria-hidden="true"><path d="M2 7 q3 -3 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--water)" stroke-width="2"/><path d="M2 14 q3 -3 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--water)" stroke-width="2" opacity=".6"/></svg>
-      Brunnen
     </div>
   </div>
 </section>
@@ -289,7 +280,6 @@ function render(m) {
   const bRun = b.state === 'run';
   $('bBrunnen').classList.toggle('running', bRun);
   $('pB').classList.toggle('on', bRun && okB);
-  $('pL').classList.toggle('on', bRun && okB);
 
   // Hauswasserwerk
   setPill('dPill', h.state);
@@ -298,16 +288,29 @@ function render(m) {
   const hRun = h.state === 'run';
   $('bDruck').classList.toggle('running', hRun);
   $('pA').classList.toggle('on', hRun && okH);
-  $('pT').classList.toggle('on', hRun && okH);
+}
+
+// Nur Nachrichten unseres Moduls annehmen (Vertrag v1: tank, brunnen, haus).
+// Alles andere wird verworfen, die letzte gültige Anzeige bleibt stehen.
+function isOwnMessage(m) {
+  return m !== null && typeof m === 'object'
+    && ['tank', 'brunnen', 'haus'].every(k => m[k] !== null && typeof m[k] === 'object');
 }
 
 // Vom Modul aufgerufen (UpdateVisualizationValue bzw. erste Anzeige); Daten kommen als JSON-String
 function handleMessage(data) {
+  let m;
   try {
-    render(typeof data === 'string' ? JSON.parse(data) : data);
+    m = typeof data === 'string' ? JSON.parse(data) : data;
   } catch (e) {
-    console.error('ZisterneKachel: Nachricht nicht lesbar', e);
+    console.warn('ZisterneKachel: Nachricht verworfen (kein JSON)', data);
+    return;
   }
+  if (!isOwnMessage(m)) {
+    console.warn('ZisterneKachel: Nachricht verworfen (fremdes Format)', data);
+    return;
+  }
+  render(m);
 }
 </script>
 </body>
