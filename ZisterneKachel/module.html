@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<!--
+  ZisterneKachel - Darstellung (HTML-SDK), Stufe 1: nur Anzeige
+  Hannes Hacker - KNX Werkstatt
+  Version: v1
+  Erstellt: 10.11.2026, 11:23
+  Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v1.
+  Die Kachel rechnet nicht: Zustand, Leistungssumme und Polarität kommen fertig vom Modul.
+  Farben sind themenneutral (abgeleitet von currentColor), damit helles und dunkles Symcon-Theme passen.
+-->
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+:root{
+  --good:#22b35e; --warn:#e9a100; --crit:#e5484d; --accent:#00a99d;
+  --water:#2f8fd8; --water2:#5fb2ee; --earth:#b9a68a;
+  --muted:color-mix(in srgb,currentColor 60%,transparent);
+  --line:color-mix(in srgb,currentColor 18%,transparent);
+  --pipe:color-mix(in srgb,currentColor 22%,transparent);
+  --well:color-mix(in srgb,currentColor 6%,transparent);
+}
+/* Schrift und Textfarbe: Symcon-Theme wird nicht übernommen (zu prüfen), daher Systemschrift und OS-Farbschema */
+html{color:#1d2733}
+@media (prefers-color-scheme:dark){html{color:#e6ecf2}}
+html,body{margin:0;height:100%;background:transparent;font-size:14px;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+body{overflow:auto;box-sizing:border-box;padding:4px}
+
+/* Layout: breit = Brunnenpumpe | Zisterne | Hauswasserwerk, schmal (< 640 px) = vertikal */
+.tile{container:tile / inline-size}
+.flow{display:grid;grid-template-columns:minmax(0,1fr) 26px minmax(0,1.1fr) 26px minmax(0,1fr);
+  grid-template-areas:"brunnen pB tank pA druck";align-items:stretch}
+#sink{grid-area:sink} #pT{grid-area:pT} #bDruck{grid-area:druck} #pA{grid-area:pA}
+#bTank{grid-area:tank} #pB{grid-area:pB} #bBrunnen{grid-area:brunnen} #pL{grid-area:pL} #well{grid-area:well}
+#sink,#pT,#pL,#well{display:none}
+
+/* Leitungen, breit: waagrecht, Fluss nach rechts */
+.pipe{align-self:center;height:8px;border-radius:4px;background:var(--pipe);position:relative;overflow:hidden}
+.pipe::after{content:"";position:absolute;inset:0;opacity:0;
+  background:repeating-linear-gradient(90deg,var(--water2) 0 8px,transparent 8px 16px);background-size:16px 100%}
+.pipe.on::after{opacity:1;animation:right .6s linear infinite}
+@keyframes right{to{background-position:16px 0}}
+@keyframes up{to{background-position:0 -16px}}
+
+/* Kasten: für alle drei identisch */
+.box{container:box / inline-size;position:relative;border:1.5px solid color-mix(in srgb,var(--good) 45%,var(--line));
+  border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0;
+  transition:border-color .3s,background-color .3s}
+.box.stale{border-color:var(--crit);background:color-mix(in srgb,var(--crit) 8%,transparent)}
+
+/* Stempel bei keiner Verbindung */
+.stamp{position:absolute;inset:0;display:none;place-items:center;pointer-events:none;z-index:2}
+.box.stale .stamp{display:grid}
+.stamp span{transform:rotate(-10deg);border:3px solid var(--crit);border-radius:6px;padding:.25em .6em;
+  color:var(--crit);font-weight:600;letter-spacing:.12em;text-transform:uppercase;text-align:center;line-height:1.15;
+  font-size:clamp(12px,7cqi,20px);max-width:88%;opacity:.9}
+
+.bh{display:flex;align-items:center;gap:10px;min-height:30px}
+.bh svg{width:28px;height:28px;flex:none}
+.bh h3{margin:0;font-size:14px;font-weight:500;flex:1;min-width:0}
+.pill{font-size:11px;font-weight:500;padding:2px 9px;border-radius:999px;color:#fff;background:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good)} .pill.warn{background:var(--warn)} .pill.crit{background:var(--crit)}
+.pill.ready{background:transparent;color:var(--good);box-shadow:inset 0 0 0 1.5px var(--good)}
+.pill.none{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;min-height:28px}
+.row>span:first-child{color:var(--muted)}
+.v{font-variant-numeric:tabular-nums;font-weight:500;text-align:right;white-space:nowrap}
+.vals{display:flex;flex-direction:column;transition:opacity .3s}
+
+/* Fußzeile mit Verbindungsanzeige */
+.fresh{margin-top:auto;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:11px;color:var(--muted)}
+.fresh .ftxt,.fresh time{white-space:nowrap}
+.lamp{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+.fresh.ok .lamp{background:var(--good)}
+.fresh.lost .lamp{background:var(--crit);animation:blink 1.6s ease-in-out infinite}
+.fresh.lost{color:var(--crit)}
+@keyframes blink{50%{opacity:.25}}
+.fresh time{margin-left:auto;font-variant-numeric:tabular-nums}
+
+/* Keine Verbindung: Werte abblenden, keine Bewegung vortäuschen */
+.box.stale .vals,.box.stale .tankbody,.box.stale .bh .pill{opacity:.4}
+.box.stale .rotor{animation:none!important}
+.rotor{transform-origin:15px 15px}
+.box.running .rotor{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Zisterne */
+.tankbody{display:flex;flex-direction:column;align-items:center;gap:8px;transition:opacity .3s}
+.tankbody svg{width:100%;max-width:150px;height:auto;display:block}
+.kpi{display:flex;flex-direction:column;width:100%}
+.big{font-size:30px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;text-align:center}
+.big small{font-size:15px;font-weight:400}
+#wave1{animation:wave 4s linear infinite}
+#wave2{animation:wave 6s linear infinite reverse}
+@keyframes wave{from{transform:translateX(-80px)}to{transform:translateX(0)}}
+#level{transition:transform .6s ease}
+.tick{fill:var(--muted);font-size:8px}
+
+.end{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--muted);padding:4px 0}
+.end svg{width:28px;height:20px}
+#well{border-radius:8px;padding:8px;background:
+  repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--earth) 35%,transparent) 6px 7px),
+  color-mix(in srgb,var(--earth) 18%,transparent)}
+
+/* Schmal: vertikal, Wasser von unten nach oben */
+@container tile (max-width:639px){
+  .flow{grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"sink" "pT" "druck" "pA" "tank" "pB" "brunnen" "pL" "well"}
+  #sink,#pT,#pL,#well{display:flex}
+  .pipe{width:8px;height:22px;justify-self:center}
+  .pipe::after{background:repeating-linear-gradient(0deg,var(--water2) 0 8px,transparent 8px 16px);background-size:100% 16px}
+  .pipe.on::after{animation-name:up}
+  .tankbody{flex-direction:row;align-items:center}
+  .tankbody svg{max-width:130px;flex:0 0 42%}
+  .big{text-align:left;margin-bottom:4px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<section class="tile" aria-label="Zisterne">
+  <div class="flow">
+    <div class="end" id="sink">
+      <svg viewBox="0 0 24 20" aria-hidden="true"><path d="M12 2 V14 M7 7 L12 2 L17 7 M5 18 H19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      zu Haus und Garten
+    </div>
+    <div class="pipe" id="pT"></div>
+
+    <!-- Hauswasserwerk -->
+    <div class="box" id="bDruck">
+      <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
+      <div class="bh">
+        <svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--accent)" stroke-width="2"/>
+          <g class="rotor"><path d="M15 15 L15 5 A10 10 0 0 1 23 10 Z M15 15 L25 18 A10 10 0 0 1 18 25 Z M15 15 L8 22 A10 10 0 0 1 5 12 Z" fill="var(--accent)"/></g></svg>
+        <h3>Hauswasserwerk</h3><span class="pill none" id="dPill">–</span>
+      </div>
+      <div class="vals">
+        <div class="row"><span>aus / an</span><span class="v" id="dStat">–</span></div>
+        <div class="row"><span>Leistung aktuell</span><span class="v" id="dPow">–</span></div>
+      </div>
+      <div class="fresh" id="fDruck"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
+    </div>
+    <div class="pipe" id="pA"></div>
+
+    <!-- Zisterne -->
+    <div class="box" id="bTank">
+      <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
+      <div class="bh">
+        <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="5" y="4" width="20" height="23" rx="4" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M5 17 q3 -2 5 0 t5 0 t5 0 t5 0 V23 a4 4 0 0 1 -4 4 H9 a4 4 0 0 1 -4 -4Z" fill="var(--accent)"/></svg>
+        <h3>Zisterne</h3><span class="pill none" id="tPill">–</span>
+      </div>
+      <div class="tankbody">
+        <svg viewBox="0 0 180 230" role="img" aria-label="Füllstand Zisterne">
+          <defs><clipPath id="clip"><rect x="20" y="10" width="140" height="200" rx="18"/></clipPath></defs>
+          <rect x="20" y="10" width="140" height="200" rx="18" fill="var(--well)" stroke="var(--line)" stroke-width="2"/>
+          <g clip-path="url(#clip)">
+            <g id="level" style="transform:translateY(230px)">
+              <path id="wave2" fill="var(--water2)" opacity=".55" d="M0 4 q20 -7 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 V230 H0Z"/>
+              <path id="wave1" fill="var(--water)" d="M0 6 q20 -6 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 V230 H0Z"/>
+            </g>
+          </g>
+          <line id="minLine" x1="20" x2="160" y1="-10" y2="-10" stroke="var(--crit)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text id="minTxt" x="164" y="-10" class="tick" style="fill:var(--crit)">min</text>
+          <g id="ticks"></g>
+        </svg>
+        <div class="kpi">
+          <div class="big"><span id="pct">–</span><small> %</small></div>
+          <div class="row"><span>Füllmenge</span><span class="v" id="ltr">–</span></div>
+          <div class="row"><span>Abstand Oberfläche</span><span class="v" id="dist">–</span></div>
+        </div>
+      </div>
+      <div class="fresh" id="fTank"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
+    </div>
+    <div class="pipe" id="pB"></div>
+
+    <!-- Brunnenpumpe -->
+    <div class="box" id="bBrunnen">
+      <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
+      <div class="bh">
+        <svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--accent)" stroke-width="2"/>
+          <g class="rotor"><path d="M15 15 L15 5 A10 10 0 0 1 23 10 Z M15 15 L25 18 A10 10 0 0 1 18 25 Z M15 15 L8 22 A10 10 0 0 1 5 12 Z" fill="var(--accent)"/></g></svg>
+        <h3>Brunnenpumpe</h3><span class="pill none" id="bPill">–</span>
+      </div>
+      <div class="vals">
+        <div class="row"><span>Automatik Modus</span><span class="v" id="bMode">–</span></div>
+        <div class="row"><span>Automatik Status</span><span class="v" id="bAuto">–</span></div>
+        <div class="row"><span>Wochenplan</span><span class="v" id="bPlan">–</span></div>
+        <div class="row"><span>Handbetrieb</span><span class="v" id="bHand">–</span></div>
+        <div class="row"><span>Mindestfüllstand</span><span class="v" id="bMin">–</span></div>
+        <div class="row"><span>Leistung aktuell</span><span class="v" id="bPow">–</span></div>
+      </div>
+      <div class="fresh" id="fBrunnen"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
+    </div>
+    <div class="pipe" id="pL"></div>
+
+    <div class="end" id="well">
+      <svg viewBox="0 0 28 20" aria-hidden="true"><path d="M2 7 q3 -3 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--water)" stroke-width="2"/><path d="M2 14 q3 -3 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--water)" stroke-width="2" opacity=".6"/></svg>
+      Brunnen
+    </div>
+  </div>
+</section>
+
+<script>
+const $ = id => document.getElementById(id);
+const DASH = '–';
+
+// Skala am Tank
+(function () {
+  let s = '';
+  for (const p of [0, 25, 50, 75, 100]) {
+    const y = 10 + (1 - p / 100) * 200;
+    s += `<line x1="12" x2="18" y1="${y}" y2="${y}" stroke="var(--muted)"/><text class="tick" x="0" y="${y + 3}">${p}</text>`;
+  }
+  $('ticks').innerHTML = s;
+})();
+
+// Formatierung: null bleibt "–", es wird nichts erfunden
+const has = v => v !== null && v !== undefined;
+const num = (v, d, unit) => has(v) ? Number(v).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }) + unit : DASH;
+const onoff = v => has(v) ? (v ? 'an' : 'aus') : DASH;
+const two = n => String(n).padStart(2, '0');
+function stamp(sec) {
+  if (!has(sec) || sec <= 0) return DASH;
+  const d = new Date(sec * 1000);
+  return `${two(d.getDate())}.${two(d.getMonth() + 1)}. ${two(d.getHours())}:${two(d.getMinutes())}`;
+}
+function planText(sec) {
+  if (!has(sec) || sec <= 0) return DASH;
+  const d = new Date(sec * 1000), t = new Date();
+  const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(d) - day(t)) / 86400000);
+  const hm = `${two(d.getHours())}:${two(d.getMinutes())}`;
+  if (diff === 0) return 'Heute, ' + hm;
+  if (diff === 1) return 'Morgen, ' + hm;
+  return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ` ${two(d.getDate())}.${two(d.getMonth() + 1)}., ` + hm;
+}
+
+// Verbindung: true = grüner Rahmen, false = Stempel, null = neutral
+function connection(c, boxId, freshId) {
+  const f = $(freshId), ok = c.online;
+  f.className = 'fresh' + (ok === true ? ' ok' : ok === false ? ' lost' : '');
+  f.querySelector('.ftxt').textContent = ok === true ? 'verbunden' : ok === false ? 'keine Verbindung' : 'Verbindung unbekannt';
+  f.querySelector('time').textContent = 'aktualisiert ' + stamp(c.ts);
+  $(boxId).classList.toggle('stale', ok === false);
+  return ok !== false;
+}
+
+function setPill(id, state) {
+  const p = $(id);
+  const map = { run: ['läuft', ' good'], ready: ['bereit', ' ready'], off: ['aus', ''] };
+  const [txt, cls] = map[state] || [DASH, ' none'];
+  p.textContent = txt;
+  p.className = 'pill' + cls;
+}
+
+function render(m) {
+  const t = m.tank || {}, b = m.brunnen || {}, h = m.haus || {};
+  connection(t, 'bTank', 'fTank');
+  const okB = connection(b, 'bBrunnen', 'fBrunnen');
+  const okH = connection(h, 'bDruck', 'fDruck');
+
+  // Zisterne
+  const lvl = has(t.level) ? Math.max(0, Math.min(100, Number(t.level))) : null;
+  $('level').style.transform = `translateY(${lvl === null ? 230 : 10 + (1 - lvl / 100) * 200 - 4}px)`;
+  $('pct').textContent = has(t.level) ? num(t.level, 0, '') : DASH;
+  $('ltr').textContent = num(t.fill, 0, ' l');
+  $('dist').textContent = num(t.dist, 0, ' cm');
+  const min = has(b.min) ? Number(b.min) : null;
+  const my = min === null ? -10 : 10 + (1 - min / 100) * 200;
+  $('minLine').setAttribute('y1', my); $('minLine').setAttribute('y2', my);
+  $('minTxt').setAttribute('y', my + 3);
+  const tp = $('tPill');
+  if (lvl === null || min === null) { tp.textContent = DASH; tp.className = 'pill none'; }
+  else {
+    const crit = lvl < min, warn = !crit && lvl < min + 10;
+    tp.textContent = crit ? 'unter Minimum' : warn ? 'knapp' : 'ausreichend';
+    tp.className = 'pill ' + (crit ? 'crit' : warn ? 'warn' : 'good');
+  }
+
+  // Brunnenpumpe
+  setPill('bPill', b.state);
+  $('bMode').textContent = has(b.mode) ? b.mode : DASH;
+  $('bAuto').textContent = onoff(b.auto);
+  $('bPlan').textContent = planText(b.plan);
+  $('bHand').textContent = onoff(b.hand);
+  $('bMin').textContent = num(b.min, 0, ' %');
+  $('bPow').textContent = num(b.power, 2, ' kW');
+  const bRun = b.state === 'run';
+  $('bBrunnen').classList.toggle('running', bRun);
+  $('pB').classList.toggle('on', bRun && okB);
+  $('pL').classList.toggle('on', bRun && okB);
+
+  // Hauswasserwerk
+  setPill('dPill', h.state);
+  $('dStat').textContent = onoff(h.on);
+  $('dPow').textContent = num(h.power, 2, ' kW');
+  const hRun = h.state === 'run';
+  $('bDruck').classList.toggle('running', hRun);
+  $('pA').classList.toggle('on', hRun && okH);
+  $('pT').classList.toggle('on', hRun && okH);
+}
+
+// Vom Modul aufgerufen (UpdateVisualizationValue bzw. erste Anzeige); Daten kommen als JSON-String
+function handleMessage(data) {
+  try {
+    render(typeof data === 'string' ? JSON.parse(data) : data);
+  } catch (e) {
+    console.error('ZisterneKachel: Nachricht nicht lesbar', e);
+  }
+}
+</script>
+</body>
+</html>

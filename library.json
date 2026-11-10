@@ -1,0 +1,12 @@
+{
+    "id": "{9A4EF2B8-E501-4E94-BDC1-CA04995740AE}",
+    "author": "Hannes Hacker - KNX Werkstatt",
+    "name": "HTML-Kacheln",
+    "url": "https://github.com/knxWerkstatt/html-kacheln",
+    "compatibility": {
+        "version": "7.1"
+    },
+    "version": "1.0",
+    "build": 1,
+    "date": 1794306233
+}

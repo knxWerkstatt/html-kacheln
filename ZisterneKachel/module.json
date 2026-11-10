@@ -1,0 +1,14 @@
+{
+    "id": "{BB53B6D6-951A-42D0-B6F2-5674D3757E7F}",
+    "name": "ZisterneKachel",
+    "type": 3,
+    "vendor": "KNX Werkstatt",
+    "aliases": [
+        "Zisterne Kachel"
+    ],
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+    "prefix": "ZKA",
+    "url": "https://github.com/knxWerkstatt/html-kacheln"
+}
