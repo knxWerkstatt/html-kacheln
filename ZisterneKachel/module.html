@@ -2,8 +2,9 @@
 <!--
   ZisterneKachel - Darstellung (HTML-SDK), Stufe 2: Anzeige + Zahnrad zu den Symcon-Einstellungen
   Hannes Hacker - KNX Werkstatt
-  Version: v7
-  Erstellt: 16.11.2026, 18:14
+  Version: v8
+  Erstellt: 16.11.2026, 18:27
+  v8: Zahnrad größer; Haltezeit kommt vom Modul (ui.hold, ganze Sekunden, 0 = sofort per Antippen).
   v7: Zahnrad in der Fußzeile jedes Kastens; 2 s halten öffnet per openObject das Einstellungs-Objekt.
       Testknöpfe der Durchstiche v5/v6 entfernt. Oberer Kachelbereich bleibt frei (Totzone am PC).
   v4: Anzeigetexte 1:1 aus der Symcon-Darstellung (Feld "txt"), keine eigene Zahlenformatierung mehr.
@@ -13,7 +14,7 @@
   v2: fremde Nachrichten werden verworfen (Felder leerten sich bei Berührung),
       kein eigenes Scrollen mehr (Wischgeste geht an die Symcon-Seite),
       Verbraucher und Brunnen entfernt, Leitungen mit Pfeil in Flussrichtung.
-  Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v4.
+  Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v5.
   Die Kachel rechnet nicht: Zustand, Leistungssumme und Polarität kommen fertig vom Modul.
   Farben sind themenneutral (abgeleitet von currentColor), damit helles und dunkles Symcon-Theme passen.
 -->
@@ -127,8 +128,8 @@ body{box-sizing:border-box;padding:4px}
   .tankbody svg{max-width:130px;flex:0 0 42%}
   .big{text-align:left;margin-bottom:4px}
 }
-/* Zahnrad: 2 s halten, Ring füllt sich; Loslassen oder Verrutschen bricht ab */
-.gear{position:relative;width:30px;height:30px;margin:-6px -6px -6px 0;align-self:flex-end;padding:0;border:0;background:transparent;
+/* Zahnrad: Haltezeit vom Modul (--hold), Ring füllt sich; Loslassen oder Verrutschen bricht ab */
+.gear{position:relative;width:42px;height:42px;margin:-10px -10px -10px 0;align-self:flex-end;padding:0;border:0;background:transparent;
   color:var(--muted);cursor:pointer;flex:none;touch-action:none;user-select:none;-webkit-user-select:none;
   -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 .gear[hidden]{display:none}
@@ -136,7 +137,7 @@ body{box-sizing:border-box;padding:4px}
 .gear .ring{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:82;stroke-dashoffset:82;
   transform:rotate(-90deg);transform-origin:15px 15px}
 .gear.hold{color:var(--accent)}
-.gear.hold .ring{stroke-dashoffset:0;transition:stroke-dashoffset 2s linear}
+.gear.hold .ring{stroke-dashoffset:0;transition:stroke-dashoffset var(--hold,2s) linear}
 .gear:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:50%}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -267,6 +268,7 @@ function setPill(id, state) {
 
 function render(m) {
   const t = m.tank || {}, b = m.brunnen || {}, h = m.haus || {};
+  if (m.ui && has(m.ui.hold)) holdMs = Math.max(0, Math.round(Number(m.ui.hold))) * 1000;
   connection(t, 'bTank', 'fTank');
   setGear('gTank', t.cfg);
   setGear('gBrunnen', b.cfg);
@@ -318,8 +320,13 @@ function render(m) {
   $('pA').classList.toggle('on', hRun && okH);
 }
 
-// Zahnrad: Ziel-IDs kommen vom Modul (cfg); 2 s halten öffnet die Symcon-Bedienung
-const HOLD_MS = 2000, MOVE_PX = 10;
+// Zahnrad: Ziel-IDs (cfg) und Haltezeit (ui.hold) kommen vom Modul; 0 s = Öffnen per kurzem Antippen
+const MOVE_PX = 10;
+let holdMs = 2000;
+function openSettings(id) {
+  if (typeof openObject === 'function') openObject(gearTarget[id]);
+  else console.warn('ZisterneKachel: openObject nicht verfügbar');
+}
 const gearTarget = { gTank: null, gBrunnen: null, gDruck: null };
 function setGear(id, target) {
   gearTarget[id] = has(target) ? Number(target) : null;
@@ -327,29 +334,32 @@ function setGear(id, target) {
 }
 function bindGear(id) {
   const g = $(id);
-  let timer = null, x0 = 0, y0 = 0;
-  const cancel = () => { clearTimeout(timer); timer = null; g.classList.remove('hold'); };
+  let timer = null, armed = false, x0 = 0, y0 = 0;
+  const cancel = () => { clearTimeout(timer); timer = null; armed = false; g.classList.remove('hold'); };
   g.addEventListener('pointerdown', e => {
     if (gearTarget[id] === null) return;
     e.preventDefault();
     try { g.setPointerCapture(e.pointerId); } catch (err) { /* nicht kritisch */ }
     x0 = e.clientX; y0 = e.clientY;
+    if (holdMs === 0) { armed = true; return; }   // sofort: öffnet beim Loslassen ohne Verrutschen
+    g.style.setProperty('--hold', holdMs + 'ms');
     g.classList.add('hold');
-    timer = setTimeout(() => {
-      cancel();
-      if (typeof openObject === 'function') openObject(gearTarget[id]);
-      else console.warn('ZisterneKachel: openObject nicht verfügbar');
-    }, HOLD_MS);
+    timer = setTimeout(() => { cancel(); openSettings(id); }, holdMs);
   });
   g.addEventListener('pointermove', e => {
-    if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > MOVE_PX) cancel();
+    if ((timer || armed) && Math.hypot(e.clientX - x0, e.clientY - y0) > MOVE_PX) cancel();
   });
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => g.addEventListener(ev, cancel));
+  g.addEventListener('pointerup', () => {
+    const tap = armed;
+    cancel();
+    if (tap) openSettings(id);
+  });
+  ['pointercancel', 'lostpointercapture'].forEach(ev => g.addEventListener(ev, cancel));
   g.addEventListener('contextmenu', e => e.preventDefault());
 }
 ['gTank', 'gBrunnen', 'gDruck'].forEach(bindGear);
 
-// Nur Nachrichten unseres Moduls annehmen (Vertrag v4: tank, brunnen, haus).
+// Nur Nachrichten unseres Moduls annehmen (Vertrag v5: tank, brunnen, haus; ui optional).
 // Alles andere wird verworfen, die letzte gültige Anzeige bleibt stehen.
 function isOwnMessage(m) {
   return m !== null && typeof m === 'object'

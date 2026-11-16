@@ -46,7 +46,8 @@
             "type": "ExpansionPanel",
             "caption": "Allgemein",
             "items": [
-                { "type": "NumberSpinner", "name": "RunThresholdW", "caption": "Laufschwelle Pumpe", "digits": 0, "minimum": 0, "suffix": " W" }
+                { "type": "NumberSpinner", "name": "RunThresholdW", "caption": "Laufschwelle Pumpe", "digits": 0, "minimum": 0, "suffix": " W" },
+                { "type": "NumberSpinner", "name": "SettingsHoldSeconds", "caption": "Zahnrad halten bis Einstellungen öffnen (0 = sofort antippen)", "minimum": 0, "maximum": 10, "suffix": " s" }
             ]
         }
     ]

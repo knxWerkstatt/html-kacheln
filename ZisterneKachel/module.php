@@ -8,14 +8,15 @@ declare(strict_types=1);
  * Das Modul selbst schreibt nie.
  *
  * Hannes Hacker - KNX Werkstatt
- * Version: v4
- * Erstellt: 16.11.2026, 18:14
+ * Version: v5
+ * Erstellt: 16.11.2026, 18:27
+ * v5: Haltezeit des Zahnrads einstellbar (SettingsHoldSeconds, ganze Sekunden, 0 = sofort per Antippen), in der Nachricht als "ui.hold".
  * v4: Einstellungs-Objekt je Kasten (TankSettings, WellSettings, HouseSettings), in der Nachricht als "cfg".
  * v3: Anzeigetexte 1:1 aus der Symcon-Darstellung (GetValueFormatted) im Feld "txt",
  *     Brunnenpumpe mit "on" (Kanal 1 oder 2 an); Leistungstext = Text des Kanals mit der höheren Leistung.
  * v2: Leistung in Watt (Quellen liefern W), Laufschwelle als neue Eigenschaft RunThresholdW, Vorgabe 10 W.
  *
- * Grundlage: variablenliste_zisterne_v3.md, nachrichtenvertrag_zisterne_v4.md
+ * Grundlage: variablenliste_zisterne_v3.md, nachrichtenvertrag_zisterne_v5.md
  * - Alle Quellvariablen werden im Instanzformular ausgewählt, keine IDs im Code.
  * - Bei jeder Aktualisierung einer Quellvariable wird der komplette Zustand an die Kachel geschickt.
  * - Berechnungen (Pumpenzustand, Leistungssumme, Polarität Verbindung) erfolgen nur hier, nicht in der Kachel.
@@ -44,6 +45,9 @@ class ZisterneKachel extends IPSModule
         $this->RegisterPropertyInteger('TankSettings', 0);
         $this->RegisterPropertyInteger('WellSettings', 0);
         $this->RegisterPropertyInteger('HouseSettings', 0);
+
+        // Haltezeit Zahnrad in ganzen Sekunden; 0 = Öffnen per kurzem Antippen
+        $this->RegisterPropertyInteger('SettingsHoldSeconds', 2);
 
         // Polarität der Verbindungsvariablen: Watchdog "Alarm" = true bei Problem, Shelly "Erreichbar" = true bei ok
         $this->RegisterPropertyBoolean('TankOnlineInvert', true);
@@ -102,7 +106,7 @@ class ZisterneKachel extends IPSModule
     }
 
     /**
-     * Kompletter Zustand nach Nachrichtenvertrag v4.
+     * Kompletter Zustand nach Nachrichtenvertrag v5.
      * Rohwerte für Logik und Grafik, "txt" für die Anzeige (1:1 Symcon-Darstellung).
      */
     private function GetFullUpdateMessage(): string
@@ -117,6 +121,9 @@ class ZisterneKachel extends IPSModule
         $housePower = $this->ReadFloat('HousePower');
 
         $message = [
+            'ui' => [
+                'hold' => max(0, $this->ReadPropertyInteger('SettingsHoldSeconds'))
+            ],
             'tank' => [
                 'online' => $this->ReadOnline('TankOnline', 'TankOnlineInvert'),
                 'ts'     => $this->ReadUpdated('TankLevel'),

@@ -1,9 +1,9 @@
 # ZisterneKachel
 
-v4 · 16.11.2026 · Hannes Hacker - KNX Werkstatt
+v5 · 16.11.2026 · Hannes Hacker - KNX Werkstatt
 
 HTML-SDK-Kachel für die Kachel-Visualisierung: Zisterne mit Brunnenpumpe (Zufluss) und Hauswasserwerk (Abfluss).
-Stufe 2: Anzeige plus Zahnrad je Kasten. 2 Sekunden halten öffnet die Symcon-Bedienung eines frei wählbaren Objekts
+Stufe 2: Anzeige plus Zahnrad je Kasten. Halten (Zeit einstellbar, 0 = antippen) öffnet die Symcon-Bedienung eines frei wählbaren Objekts
 (z. B. Dummy-Instanz mit Links auf Handbetrieb, Automatik Modus, Wochenplan). Das Modul liest Variablen, schreibt nie.
 
 ## Voraussetzungen
@@ -38,6 +38,7 @@ Stufe 2: Anzeige plus Zahnrad je Kasten. 2 Sekunden halten öffnet die Symcon-Be
 | Hauswasserwerk | Verbindung + invertieren (Vorgabe aus) | Boolean |
 | je Kasten | Einstellungen (Zahnrad), leer = kein Zahnrad | beliebiges Objekt |
 | Allgemein | Laufschwelle (Vorgabe 10 W) | Float |
+| Allgemein | Zahnrad halten bis Einstellungen öffnen (Vorgabe 2 s, 0 = sofort antippen) | Integer |
 
 ## Verhalten
 
@@ -54,6 +55,6 @@ Stufe 2: Anzeige plus Zahnrad je Kasten. 2 Sekunden halten öffnet die Symcon-Be
 | Automatik Modus | Symcon-Text + "(freigegeben)" bei Kanal 2 an, "(gesperrt)" bei Kanal 2 aus |
 | Handbetrieb | "aktiv" (fett rot) bei Kanal 1 an, sonst "inaktiv" |
 | Fehlender Wert | Anzeige "–" |
-| Zahnrad | Fußzeile rechts; 2 s halten öffnet das Einstellungs-Objekt (openObject, ab Symcon 8.2); Loslassen oder Verrutschen bricht ab |
+| Zahnrad | Fußzeile rechts, nur sichtbar wenn ein Einstellungs-Objekt eingetragen ist; Halten (einstellbar) öffnet es per openObject (ab Symcon 8.2); Loslassen oder Verrutschen bricht ab; bei 0 s öffnet kurzes Antippen |
 | Oberer Kachelbereich | bleibt ohne Bedienelemente (am PC fängt Symcon dort Klicks ab) |
 | Layout | ab 640 px Breite horizontal, darunter vertikal |
