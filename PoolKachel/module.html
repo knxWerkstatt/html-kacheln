@@ -2,8 +2,9 @@
 <!--
   PoolKachel - Darstellung (HTML-SDK): Poolinfo (Bayrol) und Poolbedienung (Poolpumpe)
   Hannes Hacker - KNX Werkstatt
-  Version: v2
-  Erstellt: 16.11.2026, 19:35
+  Version: v3
+  Erstellt: 16.11.2026, 19:38
+  v3: Überschriften "Werte" (statt Poolinfo) und "Pumpe" (statt Poolbedienung), Test.
   v2: Wassertemperatur als SVG-Text im tiefen Beckenteil (rechts unten), skaliert mit der Grafik;
       vorher mittig über dem hellen Wellenrand (weiße Schrift auf hellem Grund).
   Grundlage: pool_mockup_v1.html, pool_nachrichtenvertrag_v1.md; Regeln wie ZisterneKachel v8.
@@ -135,7 +136,7 @@ body{box-sizing:border-box;padding:4px}
         <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
         <div class="bh">
           <svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 12 q3 -2.5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M3 18 q3 -2.5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M3 24 q3 -2.5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>
-          <h3>Poolinfo</h3>
+          <h3>Werte</h3>
         </div>
         <div class="poolbody">
           <div class="poolpic">
@@ -185,7 +186,7 @@ body{box-sizing:border-box;padding:4px}
         <div class="bh">
           <svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--accent)" stroke-width="2"/>
             <g class="rotor"><path d="M15 15 L15 5 A10 10 0 0 1 23 10 Z M15 15 L25 18 A10 10 0 0 1 18 25 Z M15 15 L8 22 A10 10 0 0 1 5 12 Z" fill="var(--accent)"/></g></svg>
-          <h3>Poolbedienung</h3><span class="pill none" id="pPill">–</span>
+          <h3>Pumpe</h3><span class="pill none" id="pPill">–</span>
         </div>
         <div class="vals">
           <div class="row"><span>Poolpumpe</span><span class="v" id="pOn">–</span></div>
