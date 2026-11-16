@@ -1,0 +1,14 @@
+{
+    "id": "{B4287E5F-D16F-4D66-AC9F-FC5C8B20C38D}",
+    "name": "PoolKachel",
+    "type": 3,
+    "vendor": "KNX Werkstatt",
+    "aliases": [
+        "Pool Kachel"
+    ],
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+    "prefix": "PKA",
+    "url": "https://github.com/knxWerkstatt/html-kacheln"
+}

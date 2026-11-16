@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<!--
+  PoolKachel - Darstellung (HTML-SDK): Poolinfo (Bayrol) und Poolbedienung (Poolpumpe)
+  Hannes Hacker - KNX Werkstatt
+  Version: v1
+  Erstellt: 16.11.2026, 19:26
+  Grundlage: pool_mockup_v1.html, pool_nachrichtenvertrag_v1.md; Regeln wie ZisterneKachel v8.
+  Die Kachel rechnet nicht: Zustand, Polarität, Farben und Zeitstempel kommen fertig vom Modul.
+  Farben themenneutral (abgeleitet von currentColor), Wertfarben aus der Symcon-Darstellung (bg/fg).
+-->
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+/* Schrift und Textfarbe: Symcon-Theme wird nicht übernommen (zu prüfen), daher Systemschrift und OS-Farbschema */
+html{color:#1d2733}
+@media (prefers-color-scheme:dark){html{color:#e6ecf2}}
+html,body{margin:0;background:transparent;font-size:14px;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+/* Kein eigenes Scrollen: Wischgesten sollen bei der Symcon-Seite ankommen */
+html,body{overflow:hidden}
+body{box-sizing:border-box;padding:4px}
+.tile{--good:#22b35e;--warn:#e9a100;--crit:#e5484d;--accent:#00a99d;
+  --water:#2f8fd8;--water2:#5fb2ee;
+  --muted:color-mix(in srgb,currentColor 60%,transparent);
+  --line:color-mix(in srgb,currentColor 18%,transparent);
+  --pipe:color-mix(in srgb,currentColor 22%,transparent);
+  --well:color-mix(in srgb,currentColor 6%,transparent);
+  container:tile / inline-size;font-size:14px}
+.flow{display:grid;grid-template-columns:minmax(0,1.5fr) 34px minmax(0,1fr);grid-template-areas:"info pipe pump";align-items:stretch}
+#bInfo{grid-area:info} #pP{grid-area:pipe} #bPump{grid-area:pump}
+
+/* Leitung Pumpe -> Pool; breit: Pfeil nach links */
+.pipe{align-self:center;display:flex;flex-direction:row-reverse;align-items:center;padding:0 3px}
+.pipe .bar{flex:1;height:8px;border-radius:0 4px 4px 0;background:var(--pipe);position:relative;overflow:hidden}
+.pipe .head{flex:none;width:10px;height:16px;background:var(--pipe);clip-path:polygon(100% 0,0 50%,100% 100%)}
+.pipe.on .head{background:var(--water2)}
+.pipe .bar::after{content:"";position:absolute;inset:0;opacity:0;
+  background:repeating-linear-gradient(90deg,var(--water2) 0 8px,transparent 8px 16px);background-size:16px 100%}
+.pipe.on .bar::after{opacity:1;animation:left .6s linear infinite}
+@keyframes left{to{background-position:-16px 0}}
+@keyframes up{to{background-position:0 -16px}}
+
+.box{position:relative;border:1.5px solid color-mix(in srgb,var(--good) 45%,var(--line));border-radius:10px;
+  padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0;transition:border-color .3s,background-color .3s}
+.box.stale{border-color:var(--crit);background:color-mix(in srgb,var(--crit) 8%,transparent)}
+.box.unknown{border-color:var(--line)}
+.stamp{position:absolute;inset:0;display:none;place-items:center;pointer-events:none;z-index:3}
+.box.stale .stamp{display:grid}
+.stamp span{transform:rotate(-10deg);border:3px solid var(--crit);border-radius:6px;padding:.25em .6em;color:var(--crit);
+  font-weight:600;letter-spacing:.12em;text-transform:uppercase;text-align:center;line-height:1.15;font-size:clamp(12px,4.5cqi,20px)}
+
+.bh{display:flex;align-items:center;gap:10px;min-height:30px}
+.bh svg{width:28px;height:28px;flex:none}
+.bh h3{margin:0;font-size:14px;font-weight:500;flex:1;min-width:0}
+#bPump .bh{padding-right:24px}            /* breit: Vergrößern-Symbol sitzt über der Poolbedienung */
+.pill{font-size:11px;font-weight:500;padding:2px 9px;border-radius:999px;color:#fff;background:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good)}
+.pill.ready{background:transparent;color:var(--good);box-shadow:inset 0 0 0 1.5px var(--good)}
+.pill.none{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;min-height:28px}
+.row>span:first-child{color:var(--muted)}
+.v{font-variant-numeric:tabular-nums;font-weight:500;text-align:right;white-space:nowrap;padding:2px 8px;border-radius:6px}
+.vals{display:flex;flex-direction:column;transition:opacity .3s}
+
+/* Pool */
+.poolbody{display:flex;flex-direction:column;gap:6px;transition:opacity .3s}
+.poolpic{position:relative}
+.poolpic svg{width:100%;height:auto;display:block;max-height:160px}
+.temp{position:absolute;left:0;right:0;top:46%;text-align:center;pointer-events:none}
+.temp span{display:inline-block;font-size:28px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;
+  color:#fff;text-shadow:0 1px 3px rgba(0,40,80,.45);padding:3px 10px;border-radius:8px}
+.temp span.col{text-shadow:none}
+.temp small{display:block;font-size:11px;color:#fff;opacity:.85;text-shadow:0 1px 2px rgba(0,40,80,.5);margin-top:2px}
+.chem{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.chem div{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:8px;background:var(--well)}
+.chem small{font-size:11px;color:var(--muted)}
+.chem .v{font-size:15px}
+#wave1{animation:wave 4s linear infinite} #wave2{animation:wave 6s linear infinite reverse}
+@keyframes wave{from{transform:translateX(-60px)}to{transform:translateX(0)}}
+.bubble{opacity:0}
+.box.running .bubble{animation:bub 1.4s ease-out infinite}
+.bubble:nth-of-type(2){animation-delay:.45s!important} .bubble:nth-of-type(3){animation-delay:.9s!important}
+@keyframes bub{0%{opacity:.9;transform:translate(0,0)}100%{opacity:0;transform:translate(-34px,-10px)}}
+
+/* Fußzeile */
+.fresh{margin-top:auto;padding-top:8px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.finfo{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.fresh .ftxt,.fresh time{white-space:nowrap}
+.lamp{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+.fresh.ok .lamp{background:var(--good)}
+.fresh.lost .lamp{background:var(--crit);animation:blink 1.6s ease-in-out infinite}
+.fresh.lost{color:var(--crit)}
+@keyframes blink{50%{opacity:.25}}
+.fresh time{margin-left:auto;font-variant-numeric:tabular-nums}
+
+/* Keine Verbindung: abblenden, keine Bewegung */
+.box.stale .vals,.box.stale .poolbody,.box.stale .bh .pill{opacity:.4}
+.box.stale #wave1,.box.stale #wave2,.box.stale .rotor{animation:none!important}
+.box.stale .bubble{animation:none!important;opacity:0}
+.rotor{transform-origin:15px 15px}
+#bPump.running .rotor{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Zahnrad wie ZisterneKachel */
+.gear{position:relative;width:42px;height:42px;margin:-10px -10px -10px 0;padding:0;border:0;background:transparent;
+  color:var(--muted);cursor:pointer;flex:none;touch-action:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.gear[hidden]{display:none}
+.gear svg{position:absolute;inset:0;width:100%;height:100%}
+.gear .ring{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:82;stroke-dashoffset:82;transform:rotate(-90deg);transform-origin:15px 15px}
+.gear.hold{color:var(--accent)}
+.gear.hold .ring{stroke-dashoffset:0;transition:stroke-dashoffset var(--hold,2s) linear}
+
+/* Schmal (< 640 px): Pool oben, Pumpe unten, Pfeil nach oben */
+@container tile (max-width:639px){
+  .flow{grid-template-columns:minmax(0,1fr);grid-template-areas:"info" "pipe" "pump"}
+  .pipe{flex-direction:column-reverse;justify-self:center;height:34px;padding:3px 0}
+  .pipe .bar{flex:1;width:8px;height:auto;border-radius:0 0 4px 4px}
+  .pipe .head{width:16px;height:10px;clip-path:polygon(50% 0,100% 100%,0 100%)}
+  .pipe .bar::after{background:repeating-linear-gradient(0deg,var(--water2) 0 8px,transparent 8px 16px);background-size:100% 16px}
+  .pipe.on .bar::after{animation-name:up}
+  #bPump .bh{padding-right:0}
+  #bInfo .bh{padding-right:24px}           /* schmal: Vergrößern-Symbol sitzt über der Poolinfo */
+}
+@media (prefers-reduced-motion:reduce){.tile *{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <section class="tile" aria-label="Pool">
+    <div class="flow">
+      <!-- Poolinfo -->
+      <div class="box" id="bInfo">
+        <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
+        <div class="bh">
+          <svg viewBox="0 0 30 30" aria-hidden="true"><path d="M3 12 q3 -2.5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M3 18 q3 -2.5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M3 24 q3 -2.5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>
+          <h3>Poolinfo</h3>
+        </div>
+        <div class="poolbody">
+          <div class="poolpic">
+            <svg viewBox="0 0 320 140" role="img" aria-label="Pool">
+              <defs>
+                <clipPath id="basin"><path d="M18 34 V92 Q18 100 26 100 H120 L180 126 H284 Q294 126 294 116 V34 Z"/></clipPath>
+                <pattern id="tiles" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M14 0 H0 V14" fill="none" stroke="var(--line)" stroke-width="1"/></pattern>
+              </defs>
+              <!-- Beckenrand -->
+              <rect x="4" y="28" width="312" height="7" rx="3" fill="var(--pipe)"/>
+              <path d="M18 34 V92 Q18 100 26 100 H120 L180 126 H284 Q294 126 294 116 V34" fill="url(#tiles)" stroke="var(--muted)" stroke-width="2"/>
+              <g clip-path="url(#basin)">
+                <g transform="translate(0,44)">
+                  <path id="wave2" fill="var(--water2)" opacity=".55" d="M0 3 q15 -6 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 V100 H0Z"/>
+                  <path id="wave1" fill="var(--water)" opacity=".9" d="M0 5 q15 -5 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 V100 H0Z"/>
+                </g>
+                <!-- Einströmdüse rechts, Blasen bei laufender Pumpe -->
+                <circle class="bubble" cx="286" cy="80" r="3" fill="#fff"/>
+                <circle class="bubble" cx="286" cy="80" r="2.2" fill="#fff"/>
+                <circle class="bubble" cx="286" cy="80" r="2.6" fill="#fff"/>
+              </g>
+              <rect x="290" y="76" width="10" height="8" rx="2" fill="var(--muted)"/>
+              <!-- Leiter links -->
+              <path d="M30 60 V20 Q30 12 38 12 Q46 12 46 20 V24" fill="none" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
+              <path d="M44 60 V20 Q44 12 52 12 Q60 12 60 20 V24" fill="none" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
+              <path d="M30 44 H44 M30 54 H44" stroke="var(--muted)" stroke-width="2.5"/>
+            </svg>
+            <div class="temp"><span id="iTemp">–</span><small>Wassertemperatur</small></div>
+          </div>
+          <div class="chem">
+            <div><small>pH</small><span class="v" id="iPh">–</span></div>
+            <div><small>Redox</small><span class="v" id="iRedox">–</span></div>
+            <div><small>Salzgehalt</small><span class="v" id="iSalt">–</span></div>
+          </div>
+        </div>
+        <div class="fresh" id="fInfo"><span class="finfo"><span class="lamp"></span><span class="ftxt">–</span><time></time></span></div>
+      </div>
+
+      <div class="pipe" id="pP" aria-hidden="true"><span class="bar"></span><span class="head"></span></div>
+
+      <!-- Poolbedienung -->
+      <div class="box" id="bPump">
+        <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
+        <div class="bh">
+          <svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--accent)" stroke-width="2"/>
+            <g class="rotor"><path d="M15 15 L15 5 A10 10 0 0 1 23 10 Z M15 15 L25 18 A10 10 0 0 1 18 25 Z M15 15 L8 22 A10 10 0 0 1 5 12 Z" fill="var(--accent)"/></g></svg>
+          <h3>Poolbedienung</h3><span class="pill none" id="pPill">–</span>
+        </div>
+        <div class="vals">
+          <div class="row"><span>Poolpumpe</span><span class="v" id="pOn">–</span></div>
+          <div class="row"><span>Leistung aktuell</span><span class="v" id="pPow">–</span></div>
+          <div class="row"><span>Energie gesamt</span><span class="v" id="pEn">–</span></div>
+        </div>
+        <div class="fresh" id="fPump"><span class="finfo"><span class="lamp"></span><span class="ftxt">–</span><time></time></span><button type="button" class="gear" id="gPump" hidden aria-label="Pumpe schalten (halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path fill="currentColor" d="M15 10.2a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6zm0 2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6z"/><path fill="currentColor" d="M13.6 6h2.8l.4 2.1 1.6.7 1.8-1.2 2 2-1.2 1.8.7 1.6 2.1.4v2.8l-2.1.4-.7 1.6 1.2 1.8-2 2-1.8-1.2-1.6.7-.4 2.1h-2.8l-.4-2.1-1.6-.7-1.8 1.2-2-2 1.2-1.8-.7-1.6L6 16.4v-2.8l2.1-.4.7-1.6-1.2-1.8 2-2 1.8 1.2 1.6-.7z" fill-rule="evenodd" opacity=".9"/></svg></button></div>
+      </div>
+    </div>
+  </section>
+
+<script>
+const $ = id => document.getElementById(id);
+const DASH = '–';
+const has = v => v !== null && v !== undefined;
+const two = n => String(n).padStart(2, '0');
+function stamp(sec) {
+  if (!has(sec) || sec <= 0) return DASH;
+  const d = new Date(sec * 1000);
+  return `${two(d.getDate())}.${two(d.getMonth() + 1)}. ${two(d.getHours())}:${two(d.getMinutes())}`;
+}
+// Farbe: bg/fg kommen als "#rrggbb" oder null; ohne fg wird Schwarz/Weiß nach Helligkeit gewählt
+function contrast(hex) {
+  const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#111' : '#fff';
+}
+function val(el, o) {
+  el.textContent = o && has(o.txt) ? String(o.txt) : DASH;
+  const bg = o && has(o.bg) ? o.bg : null, fg = o && has(o.fg) ? o.fg : null;
+  el.style.background = bg || '';
+  el.style.color = fg || (bg ? contrast(bg) : '');
+  el.classList.toggle('col', !!bg);
+}
+function connection(c, boxId, freshId) {
+  const f = $(freshId), ok = c.online;
+  f.className = 'fresh' + (ok === true ? ' ok' : ok === false ? ' lost' : '');
+  f.querySelector('.ftxt').textContent = ok === true ? 'verbunden' : ok === false ? 'keine Verbindung' : 'Verbindung unbekannt';
+  f.querySelector('time').textContent = 'aktualisiert ' + stamp(c.ts);
+  $(boxId).classList.toggle('stale', ok === false);
+  $(boxId).classList.toggle('unknown', !has(ok));
+  return ok !== false;
+}
+function setPill(id, state) {
+  const map = { run: ['läuft', ' good'], ready: ['bereit', ' ready'], off: ['aus', ''] };
+  const [t, c] = map[state] || [DASH, ' none'];
+  $(id).textContent = t; $(id).className = 'pill' + c;
+}
+let gearTarget = null, holdMs = 2000;
+function render(m) {
+  const i = m.info, p = m.pumpe;
+  if (m.ui && has(m.ui.hold)) holdMs = Math.max(0, Math.round(Number(m.ui.hold))) * 1000;
+  connection(i, 'bInfo', 'fInfo');
+  const okP = connection(p, 'bPump', 'fPump');
+  val($('iTemp'), i.temp); val($('iPh'), i.ph); val($('iRedox'), i.redox); val($('iSalt'), i.salt);
+  setPill('pPill', p.state);
+  $('pOn').textContent = has(p.on) ? (p.on ? 'an' : 'aus') : DASH;
+  $('pPow').textContent = p.txt && has(p.txt.power) ? p.txt.power : DASH;
+  $('pEn').textContent = p.txt && has(p.txt.energy) ? p.txt.energy : DASH;
+  const run = p.state === 'run' && okP;
+  $('bPump').classList.toggle('running', p.state === 'run');
+  $('bInfo').classList.toggle('running', run);
+  $('pP').classList.toggle('on', run);
+  gearTarget = has(p.cfg) ? Number(p.cfg) : null;
+  $('gPump').hidden = gearTarget === null;
+}
+// Zahnrad: Ziel-ID (cfg) und Haltezeit (ui.hold) kommen vom Modul; 0 s = Öffnen per kurzem Antippen.
+// Halten -> openObject(cfg); Loslassen oder Verrutschen > 10 px bricht ab.
+const MOVE_PX = 10;
+(function () {
+  const g = $('gPump');
+  let timer = null, armed = false, x0 = 0, y0 = 0;
+  const open = () => {
+    if (typeof openObject === 'function') openObject(gearTarget);
+    else console.warn('PoolKachel: openObject nicht verfügbar');
+  };
+  const cancel = () => { clearTimeout(timer); timer = null; armed = false; g.classList.remove('hold'); };
+  g.addEventListener('pointerdown', e => {
+    if (gearTarget === null) return;
+    e.preventDefault();
+    try { g.setPointerCapture(e.pointerId); } catch (err) { /* nicht kritisch */ }
+    x0 = e.clientX; y0 = e.clientY;
+    if (holdMs === 0) { armed = true; return; }   // sofort: öffnet beim Loslassen ohne Verrutschen
+    g.style.setProperty('--hold', holdMs + 'ms');
+    g.classList.add('hold');
+    timer = setTimeout(() => { cancel(); open(); }, holdMs);
+  });
+  g.addEventListener('pointermove', e => {
+    if ((timer || armed) && Math.hypot(e.clientX - x0, e.clientY - y0) > MOVE_PX) cancel();
+  });
+  g.addEventListener('pointerup', () => { const tap = armed; cancel(); if (tap) open(); });
+  ['pointercancel', 'lostpointercapture'].forEach(ev => g.addEventListener(ev, cancel));
+  g.addEventListener('contextmenu', e => e.preventDefault());
+})();
+
+// Nur Nachrichten unseres Moduls annehmen (Vertrag pool v1: info, pumpe; ui optional).
+// Alles andere wird verworfen, die letzte gültige Anzeige bleibt stehen.
+function isOwnMessage(m) {
+  return m !== null && typeof m === 'object'
+    && ['info', 'pumpe'].every(k => m[k] !== null && typeof m[k] === 'object');
+}
+
+// Vom Modul aufgerufen (UpdateVisualizationValue bzw. erste Anzeige); Daten kommen als JSON-String
+function handleMessage(data) {
+  let m;
+  try {
+    m = typeof data === 'string' ? JSON.parse(data) : data;
+  } catch (e) {
+    console.warn('PoolKachel: Nachricht verworfen (kein JSON)', data);
+    return;
+  }
+  if (!isOwnMessage(m)) {
+    console.warn('PoolKachel: Nachricht verworfen (fremdes Format)', data);
+    return;
+  }
+  render(m);
+}
+</script>
+</body>
+</html>
