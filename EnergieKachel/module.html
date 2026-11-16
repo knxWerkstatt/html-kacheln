@@ -3,8 +3,10 @@
   EnergieKachel - Darstellung (HTML-SDK): Energiefluss Inselanlage
   PV 3 kW, PV 6 kW -> Hybrid-WR SI 8 mit Batterie -> Verbrauch -> Brunnenpumpe, Hauswasserwerk, Poolpumpe, Rest
   Hannes Hacker - KNX Werkstatt
-  Version: v3
-  Erstellt: 16.11.2026, 21:22
+  Version: v4
+  Erstellt: 16.11.2026, 21:26
+  v4: schmal: PV-Kästen so breit wie der Rest (grid-column-Regeln entfernt, Bereiche nur per grid-area);
+      Abstand rechts bei PV 3 kW für das Vergrößern-Symbol wieder wirksam.
   v3: schmal (Handy) größere Schrift, v. a. Bereichsüberschriften; breit unverändert.
   v2: Auge (Detailansicht) in der Fußzeile aller 7 Kästen, Bedienung wie Zahnrad der PoolKachel (halten, ui.hold);
       Zeitstempel von heute nur "HH:MM".
@@ -81,7 +83,7 @@ body{box-sizing:border-box;padding:4px}
 .vpipe.on .bar::after{opacity:1;animation:down .7s linear infinite}
 .vpipe.on .head{background:var(--c,var(--sun))}
 @keyframes down{from{background-position:0 -14px}to{background-position:0 0}}
-.load{grid-column:1/3;display:flex;justify-content:center;align-items:center;gap:10px;height:40px}
+.load{display:flex;justify-content:center;align-items:center;gap:10px;height:40px}
 .load .vpipe{height:40px}
 .load .lbl{font-size:12px;display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;min-width:0}
 .load .lbl>span{color:var(--muted)}
@@ -91,7 +93,6 @@ body{box-sizing:border-box;padding:4px}
 .load .sp{flex:1} .load .sp:last-child{text-align:left}
 
 /* Wechselrichter mit Batterie */
-#bWr{grid-column:1/3}
 .inner{display:flex;align-items:center;gap:10px;transition:opacity .3s}
 .wrpart{flex:none;min-width:0;display:flex;flex-direction:column;gap:2px}
 .hpipe{flex:1 1 auto;max-width:220px;min-width:40px;margin-left:auto;display:flex;align-items:center}
@@ -113,7 +114,7 @@ body{box-sizing:border-box;padding:4px}
 .soc .val{font-size:20px}
 
 /* Verbraucher */
-.cons{grid-column:1/3;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .cons .box{padding:8px 10px;overflow:hidden}
 .cons .box::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;opacity:0;
   background:repeating-linear-gradient(90deg,var(--accent) 0 7px,transparent 7px 14px);background-size:14px 100%}
@@ -126,7 +127,7 @@ body{box-sizing:border-box;padding:4px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Gesamt-Fußzeile */
-.tfoot{grid-column:1/3;display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:6px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+.tfoot{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:6px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
 .tfoot time{margin-left:auto;font-variant-numeric:tabular-nums}
 
 /* Keine Verbindung: keine Bewegung */
@@ -147,7 +148,6 @@ body{box-sizing:border-box;padding:4px}
   #bPv3 .foot,#bPv6 .foot,.cons .foot{grid-area:foot;padding-left:28px}
   .cons .foot{padding-left:28px}
   #bPv6 .bh{padding-right:0}
-  #bPv3{padding-right:34px}                   /* Vergrößern-Symbol sitzt jetzt über PV 3 kW */
   .stamp span{font-size:11px}
   /* Zeile: Stempel über dem Wert rechts, damit "Stand …" links lesbar bleibt */
   #bPv3 .stamp,#bPv6 .stamp,.cons .stamp{justify-items:end;padding-right:8px}
@@ -166,6 +166,7 @@ body{box-sizing:border-box;padding:4px}
   #bPv3 .foot,#bPv6 .foot,.cons .foot{padding-left:32px}
   .load .lbl{font-size:13px} .load .lbl b{font-size:16px} .load .lbl em{font-size:11.5px}
   #bPv3,#bPv6,.cons .box{padding:8px 10px}
+  #bPv3{padding-right:38px}                   /* Vergrößern-Symbol sitzt über PV 3 kW (nach der padding-Regel!) */
 }
 @media (prefers-reduced-motion:reduce){.tile *{animation:none!important;transition:none!important}}
 </style>
