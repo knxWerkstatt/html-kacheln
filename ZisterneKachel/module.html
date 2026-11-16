@@ -2,10 +2,11 @@
 <!--
   ZisterneKachel - Darstellung (HTML-SDK), Stufe 1: nur Anzeige
   Hannes Hacker - KNX Werkstatt
-  Version: v5 (DURCHSTICH, vorübergehend)
-  Erstellt: 16.11.2026, 17:57
-  v5: zwei Testknöpfe für openObject (Handbetrieb 23989, Wochenplan 14986), IDs fest eingetragen.
-      Nur zum Test von Stufe 2, wird wieder ausgebaut.
+  Version: v6 (DURCHSTICH 2, vorübergehend)
+  Erstellt: 16.11.2026, 18:07
+  v6: Testknöpfe öffnen die Dummy-Instanz "Brunnenpumpe" (37840, Links), einer oben, einer mitten im Kasten;
+      Anzeige, ob Maus-/Touch-Ereignisse ankommen. Nur zum Test von Stufe 2, wird wieder ausgebaut.
+  v5: Durchstich 1, openObject auf Handbetrieb 23989 und Wochenplan 14986.
   v4: Anzeigetexte 1:1 aus der Symcon-Darstellung (Feld "txt"), keine eigene Zahlenformatierung mehr.
       Brunnenpumpe neu geordnet: aus/an, Leistung, Automatik Modus (freigegeben/gesperrt), Handbetrieb, Wochenplan.
   v3: Leistung in Watt, Mindestfüllstand von der Brunnenpumpe zur Zisterne verschoben,
@@ -137,9 +138,8 @@ body{box-sizing:border-box;padding:4px}
 <section class="tile" aria-label="Zisterne">
   <!-- DURCHSTICH openObject: vorübergehend -->
   <div class="test">
-    <button type="button" onclick="testOpen(23989)">TEST Handbetrieb öffnen</button>
-    <button type="button" onclick="testOpen(14986)">TEST Wochenplan öffnen</button>
-    <output id="testOut"></output>
+    <button type="button" onclick="testOpen(37840)">TEST oben: Einstellungen Brunnenpumpe</button>
+    <output id="testOut">noch kein Ereignis</output>
   </div>
   <div class="flow">
     <!-- Hauswasserwerk -->
@@ -205,6 +205,8 @@ body{box-sizing:border-box;padding:4px}
         <div class="row"><span>Handbetrieb</span><span class="v" id="bHand">–</span></div>
         <div class="row"><span>Wochenplan</span><span class="v" id="bPlan">–</span></div>
       </div>
+      <!-- DURCHSTICH 2: Knopf mitten in der Kachel -->
+      <div class="test"><button type="button" onclick="testOpen(37840)">TEST Mitte: Einstellungen Brunnenpumpe</button></div>
       <div class="fresh" id="fBrunnen"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
     </div>
   </div>
@@ -312,6 +314,13 @@ function render(m) {
   $('bDruck').classList.toggle('running', hRun);
   $('pA').classList.toggle('on', hRun && okH);
 }
+
+// DURCHSTICH 2: zeigt, ob Maus-/Touch-Ereignisse überhaupt in der Kachel ankommen
+['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(ev =>
+  document.addEventListener(ev, e => {
+    const t = e.target && e.target.textContent ? e.target.textContent.trim().slice(0, 12) : '';
+    $('testOut').textContent = 'Ereignis: ' + ev + (t ? ' auf "' + t + '"' : '');
+  }, true));
 
 // DURCHSTICH openObject: vorübergehend
 function testOpen(id) {
