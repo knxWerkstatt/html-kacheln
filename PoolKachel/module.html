@@ -2,8 +2,10 @@
 <!--
   PoolKachel - Darstellung (HTML-SDK): Poolinfo (Bayrol) und Poolbedienung (Poolpumpe)
   Hannes Hacker - KNX Werkstatt
-  Version: v1
-  Erstellt: 16.11.2026, 19:26
+  Version: v2
+  Erstellt: 16.11.2026, 19:35
+  v2: Wassertemperatur als SVG-Text im tiefen Beckenteil (rechts unten), skaliert mit der Grafik;
+      vorher mittig über dem hellen Wellenrand (weiße Schrift auf hellem Grund).
   Grundlage: pool_mockup_v1.html, pool_nachrichtenvertrag_v1.md; Regeln wie ZisterneKachel v8.
   Die Kachel rechnet nicht: Zustand, Polarität, Farben und Zeitstempel kommen fertig vom Modul.
   Farben themenneutral (abgeleitet von currentColor), Wertfarben aus der Symcon-Darstellung (bg/fg).
@@ -67,11 +69,11 @@ body{box-sizing:border-box;padding:4px}
 .poolbody{display:flex;flex-direction:column;gap:6px;transition:opacity .3s}
 .poolpic{position:relative}
 .poolpic svg{width:100%;height:auto;display:block;max-height:160px}
-.temp{position:absolute;left:0;right:0;top:46%;text-align:center;pointer-events:none}
-.temp span{display:inline-block;font-size:28px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;
-  color:#fff;text-shadow:0 1px 3px rgba(0,40,80,.45);padding:3px 10px;border-radius:8px}
-.temp span.col{text-shadow:none}
-.temp small{display:block;font-size:11px;color:#fff;opacity:.85;text-shadow:0 1px 2px rgba(0,40,80,.5);margin-top:2px}
+/* Wassertemperatur im tiefen Beckenteil; Schatten über paint-order, damit Weiß auf hellem Wasser lesbar bleibt */
+.tval{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;fill:#fff;
+  stroke:rgba(0,40,80,.35);stroke-width:3px;paint-order:stroke;stroke-linejoin:round}
+.tval.col{stroke:none}
+.tlbl{font-size:10px;fill:#fff;opacity:.9;stroke:rgba(0,40,80,.35);stroke-width:2px;paint-order:stroke}
 .chem{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .chem div{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:8px;background:var(--well)}
 .chem small{font-size:11px;color:var(--muted)}
@@ -156,12 +158,15 @@ body{box-sizing:border-box;padding:4px}
                 <circle class="bubble" cx="286" cy="80" r="2.6" fill="#fff"/>
               </g>
               <rect x="290" y="76" width="10" height="8" rx="2" fill="var(--muted)"/>
+              <!-- Wassertemperatur im tiefen Teil -->
+              <rect id="iTempBg" rx="6" fill="none" visibility="hidden"/>
+              <text id="iTemp" class="tval" x="226" y="106" text-anchor="middle">–</text>
+              <text class="tlbl" x="232" y="120" text-anchor="middle">Wassertemperatur</text>
               <!-- Leiter links -->
               <path d="M30 60 V20 Q30 12 38 12 Q46 12 46 20 V24" fill="none" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
               <path d="M44 60 V20 Q44 12 52 12 Q60 12 60 20 V24" fill="none" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
               <path d="M30 44 H44 M30 54 H44" stroke="var(--muted)" stroke-width="2.5"/>
             </svg>
-            <div class="temp"><span id="iTemp">–</span><small>Wassertemperatur</small></div>
           </div>
           <div class="chem">
             <div><small>pH</small><span class="v" id="iPh">–</span></div>
@@ -214,6 +219,20 @@ function val(el, o) {
   el.style.color = fg || (bg ? contrast(bg) : '');
   el.classList.toggle('col', !!bg);
 }
+// Wassertemperatur als SVG-Text; Hintergrundfarbe als Rechteck hinter dem Text
+function tempVal(o) {
+  const t = $('iTemp'), r = $('iTempBg');
+  t.textContent = o && has(o.txt) ? String(o.txt) : DASH;
+  const bg = o && has(o.bg) ? o.bg : null, fg = o && has(o.fg) ? o.fg : null;
+  t.style.fill = fg || (bg ? contrast(bg) : '');
+  t.classList.toggle('col', !!bg);
+  if (!bg) { r.setAttribute('visibility', 'hidden'); return; }
+  let bb;
+  try { bb = t.getBBox(); } catch (e) { r.setAttribute('visibility', 'hidden'); return; }
+  r.setAttribute('x', bb.x - 6); r.setAttribute('y', bb.y - 1);
+  r.setAttribute('width', bb.width + 12); r.setAttribute('height', bb.height + 2);
+  r.setAttribute('fill', bg); r.setAttribute('visibility', 'visible');
+}
 function connection(c, boxId, freshId) {
   const f = $(freshId), ok = c.online;
   f.className = 'fresh' + (ok === true ? ' ok' : ok === false ? ' lost' : '');
@@ -234,7 +253,7 @@ function render(m) {
   if (m.ui && has(m.ui.hold)) holdMs = Math.max(0, Math.round(Number(m.ui.hold))) * 1000;
   connection(i, 'bInfo', 'fInfo');
   const okP = connection(p, 'bPump', 'fPump');
-  val($('iTemp'), i.temp); val($('iPh'), i.ph); val($('iRedox'), i.redox); val($('iSalt'), i.salt);
+  tempVal(i.temp); val($('iPh'), i.ph); val($('iRedox'), i.redox); val($('iSalt'), i.salt);
   setPill('pPill', p.state);
   $('pOn').textContent = has(p.on) ? (p.on ? 'an' : 'aus') : DASH;
   $('pPow').textContent = p.txt && has(p.txt.power) ? p.txt.power : DASH;
