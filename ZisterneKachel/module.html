@@ -2,12 +2,14 @@
 <!--
   ZisterneKachel - Darstellung (HTML-SDK), Stufe 1: nur Anzeige
   Hannes Hacker - KNX Werkstatt
-  Version: v2
-  Erstellt: 10.11.2026, 12:40
+  Version: v3
+  Erstellt: 16.11.2026, 17:22
+  v3: Leistung in Watt, Mindestfüllstand von der Brunnenpumpe zur Zisterne verschoben,
+      Platz oben rechts für das Symcon-Vergrößern-Symbol.
   v2: fremde Nachrichten werden verworfen (Felder leerten sich bei Berührung),
       kein eigenes Scrollen mehr (Wischgeste geht an die Symcon-Seite),
       Verbraucher und Brunnen entfernt, Leitungen mit Pfeil in Flussrichtung.
-  Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v1.
+  Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v2.
   Die Kachel rechnet nicht: Zustand, Leistungssumme und Polarität kommen fertig vom Modul.
   Farben sind themenneutral (abgeleitet von currentColor), damit helles und dunkles Symcon-Theme passen.
 -->
@@ -65,6 +67,8 @@ body{box-sizing:border-box;padding:4px}
 .bh{display:flex;align-items:center;gap:10px;min-height:30px}
 .bh svg{width:28px;height:28px;flex:none}
 .bh h3{margin:0;font-size:14px;font-weight:500;flex:1;min-width:0}
+/* Hauswasserwerk liegt in beiden Layouts oben rechts: dort sitzt das Vergrößern-Symbol von Symcon */
+#bDruck .bh{padding-right:24px}
 .pill{font-size:11px;font-weight:500;padding:2px 9px;border-radius:999px;color:#fff;background:var(--muted);white-space:nowrap}
 .pill.good{background:var(--good)} .pill.warn{background:var(--warn)} .pill.crit{background:var(--crit)}
 .pill.ready{background:transparent;color:var(--good);box-shadow:inset 0 0 0 1.5px var(--good)}
@@ -165,6 +169,7 @@ body{box-sizing:border-box;padding:4px}
           <div class="big"><span id="pct">–</span><small> %</small></div>
           <div class="row"><span>Füllmenge</span><span class="v" id="ltr">–</span></div>
           <div class="row"><span>Abstand Oberfläche</span><span class="v" id="dist">–</span></div>
+          <div class="row"><span>Mindestfüllstand</span><span class="v" id="bMin">–</span></div>
         </div>
       </div>
       <div class="fresh" id="fTank"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
@@ -184,7 +189,6 @@ body{box-sizing:border-box;padding:4px}
         <div class="row"><span>Automatik Status</span><span class="v" id="bAuto">–</span></div>
         <div class="row"><span>Wochenplan</span><span class="v" id="bPlan">–</span></div>
         <div class="row"><span>Handbetrieb</span><span class="v" id="bHand">–</span></div>
-        <div class="row"><span>Mindestfüllstand</span><span class="v" id="bMin">–</span></div>
         <div class="row"><span>Leistung aktuell</span><span class="v" id="bPow">–</span></div>
       </div>
       <div class="fresh" id="fBrunnen"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
@@ -276,7 +280,7 @@ function render(m) {
   $('bPlan').textContent = planText(b.plan);
   $('bHand').textContent = onoff(b.hand);
   $('bMin').textContent = num(b.min, 0, ' %');
-  $('bPow').textContent = num(b.power, 2, ' kW');
+  $('bPow').textContent = num(b.power, 0, ' W');
   const bRun = b.state === 'run';
   $('bBrunnen').classList.toggle('running', bRun);
   $('pB').classList.toggle('on', bRun && okB);
@@ -284,13 +288,13 @@ function render(m) {
   // Hauswasserwerk
   setPill('dPill', h.state);
   $('dStat').textContent = onoff(h.on);
-  $('dPow').textContent = num(h.power, 2, ' kW');
+  $('dPow').textContent = num(h.power, 0, ' W');
   const hRun = h.state === 'run';
   $('bDruck').classList.toggle('running', hRun);
   $('pA').classList.toggle('on', hRun && okH);
 }
 
-// Nur Nachrichten unseres Moduls annehmen (Vertrag v1: tank, brunnen, haus).
+// Nur Nachrichten unseres Moduls annehmen (Vertrag v2: tank, brunnen, haus).
 // Alles andere wird verworfen, die letzte gültige Anzeige bleibt stehen.
 function isOwnMessage(m) {
   return m !== null && typeof m === 'object'

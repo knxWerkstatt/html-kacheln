@@ -20,8 +20,8 @@
                 { "type": "SelectVariable", "name": "WellMode", "caption": "Automatik Modus", "validVariableTypes": [1] },
                 { "type": "SelectVariable", "name": "WellStatus1", "caption": "Status Kanal 1 (manuell, Handbetrieb)", "validVariableTypes": [0] },
                 { "type": "SelectVariable", "name": "WellStatus2", "caption": "Status Kanal 2 (Automatik, über Schwimmer)", "validVariableTypes": [0] },
-                { "type": "SelectVariable", "name": "WellPower1", "caption": "Leistung Kanal 1 kW", "validVariableTypes": [1, 2] },
-                { "type": "SelectVariable", "name": "WellPower2", "caption": "Leistung Kanal 2 kW", "validVariableTypes": [1, 2] },
+                { "type": "SelectVariable", "name": "WellPower1", "caption": "Leistung Kanal 1 W", "validVariableTypes": [1, 2] },
+                { "type": "SelectVariable", "name": "WellPower2", "caption": "Leistung Kanal 2 W", "validVariableTypes": [1, 2] },
                 { "type": "SelectVariable", "name": "WellMinLevel", "caption": "Mindestfüllstand %", "validVariableTypes": [1, 2] },
                 { "type": "SelectEvent", "name": "WellSchedule", "caption": "Wochenplan (Ereignis)" },
                 { "type": "SelectVariable", "name": "WellOnline", "caption": "Verbindung (Erreichbar)", "validVariableTypes": [0] },
@@ -34,7 +34,7 @@
             "expanded": true,
             "items": [
                 { "type": "SelectVariable", "name": "HouseStatus", "caption": "Status aus / an", "validVariableTypes": [0] },
-                { "type": "SelectVariable", "name": "HousePower", "caption": "Leistung kW", "validVariableTypes": [1, 2] },
+                { "type": "SelectVariable", "name": "HousePower", "caption": "Leistung W", "validVariableTypes": [1, 2] },
                 { "type": "SelectVariable", "name": "HouseOnline", "caption": "Verbindung (Erreichbar)", "validVariableTypes": [0] },
                 { "type": "CheckBox", "name": "HouseOnlineInvert", "caption": "Verbindung invertieren (true = keine Verbindung)" }
             ]
@@ -43,7 +43,7 @@
             "type": "ExpansionPanel",
             "caption": "Allgemein",
             "items": [
-                { "type": "NumberSpinner", "name": "RunThreshold", "caption": "Laufschwelle Pumpe", "digits": 3, "minimum": 0, "suffix": " kW" }
+                { "type": "NumberSpinner", "name": "RunThresholdW", "caption": "Laufschwelle Pumpe", "digits": 0, "minimum": 0, "suffix": " W" }
             ]
         }
     ]

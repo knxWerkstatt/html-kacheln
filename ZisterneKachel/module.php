@@ -7,10 +7,11 @@ declare(strict_types=1);
  * Stufe 1: nur Anzeige (Modul -> Kachel), keine Bedienung.
  *
  * Hannes Hacker - KNX Werkstatt
- * Version: v1
- * Erstellt: 10.11.2026, 11:23
+ * Version: v2
+ * Erstellt: 16.11.2026, 17:22
+ * v2: Leistung in Watt (Quellen liefern W), Laufschwelle als neue Eigenschaft RunThresholdW, Vorgabe 10 W.
  *
- * Grundlage: variablenliste_zisterne.md (v1), nachrichtenvertrag_zisterne.md (v1)
+ * Grundlage: variablenliste_zisterne_v2.md, nachrichtenvertrag_zisterne_v2.md
  * - Alle Quellvariablen werden im Instanzformular ausgewählt, keine IDs im Code.
  * - Bei jeder Aktualisierung einer Quellvariable wird der komplette Zustand an die Kachel geschickt.
  * - Berechnungen (Pumpenzustand, Leistungssumme, Polarität Verbindung) erfolgen nur hier, nicht in der Kachel.
@@ -40,8 +41,9 @@ class ZisterneKachel extends IPSModule
         $this->RegisterPropertyBoolean('WellOnlineInvert', false);
         $this->RegisterPropertyBoolean('HouseOnlineInvert', false);
 
-        // Pumpe gilt als "läuft", wenn die Leistung diese Schwelle überschreitet
-        $this->RegisterPropertyFloat('RunThreshold', 0.01);
+        // Pumpe gilt als "läuft", wenn die Leistung (Watt) diese Schwelle überschreitet.
+        // Neuer Name statt "RunThreshold" (v1, kW), damit bestehende Instanzen die neue Vorgabe bekommen.
+        $this->RegisterPropertyFloat('RunThresholdW', 10);
 
         // Visualisierungstyp 1 = HTML-SDK
         $this->SetVisualizationType(1);
@@ -91,7 +93,7 @@ class ZisterneKachel extends IPSModule
     }
 
     /**
-     * Kompletter Zustand nach Nachrichtenvertrag v1.
+     * Kompletter Zustand nach Nachrichtenvertrag v2 (Leistung in Watt).
      */
     private function GetFullUpdateMessage(): string
     {
@@ -207,7 +209,7 @@ class ZisterneKachel extends IPSModule
         if (!count($present) && $power === null) {
             return null;
         }
-        if ($power !== null && $power > $this->ReadPropertyFloat('RunThreshold')) {
+        if ($power !== null && $power > $this->ReadPropertyFloat('RunThresholdW')) {
             return 'run';
         }
         return in_array(true, $present, true) ? 'ready' : 'off';
