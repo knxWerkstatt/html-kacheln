@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 /**
  * ZisterneKachel - HTML-SDK-Kachel für Zisterne, Brunnenpumpe und Hauswasserwerk
- * Stufe 1: nur Anzeige (Modul -> Kachel), keine Bedienung.
+ * Stufe 2: Anzeige + Zahnrad je Kasten, das die Symcon-Bedienung (openObject) einer Einstellungs-Instanz öffnet.
+ * Das Modul selbst schreibt nie.
  *
  * Hannes Hacker - KNX Werkstatt
- * Version: v3
- * Erstellt: 16.11.2026, 17:47
+ * Version: v4
+ * Erstellt: 16.11.2026, 18:14
+ * v4: Einstellungs-Objekt je Kasten (TankSettings, WellSettings, HouseSettings), in der Nachricht als "cfg".
  * v3: Anzeigetexte 1:1 aus der Symcon-Darstellung (GetValueFormatted) im Feld "txt",
  *     Brunnenpumpe mit "on" (Kanal 1 oder 2 an); Leistungstext = Text des Kanals mit der höheren Leistung.
  * v2: Leistung in Watt (Quellen liefern W), Laufschwelle als neue Eigenschaft RunThresholdW, Vorgabe 10 W.
  *
- * Grundlage: variablenliste_zisterne_v3.md, nachrichtenvertrag_zisterne_v3.md
+ * Grundlage: variablenliste_zisterne_v3.md, nachrichtenvertrag_zisterne_v4.md
  * - Alle Quellvariablen werden im Instanzformular ausgewählt, keine IDs im Code.
  * - Bei jeder Aktualisierung einer Quellvariable wird der komplette Zustand an die Kachel geschickt.
  * - Berechnungen (Pumpenzustand, Leistungssumme, Polarität Verbindung) erfolgen nur hier, nicht in der Kachel.
@@ -37,6 +39,11 @@ class ZisterneKachel extends IPSModule
             $this->RegisterPropertyInteger($property, 0);
         }
         $this->RegisterPropertyInteger('WellSchedule', 0);
+
+        // Einstellungs-Objekte (z. B. Dummy-Instanz mit Links), werden per Zahnrad in der Kachel geöffnet; 0 = kein Zahnrad
+        $this->RegisterPropertyInteger('TankSettings', 0);
+        $this->RegisterPropertyInteger('WellSettings', 0);
+        $this->RegisterPropertyInteger('HouseSettings', 0);
 
         // Polarität der Verbindungsvariablen: Watchdog "Alarm" = true bei Problem, Shelly "Erreichbar" = true bei ok
         $this->RegisterPropertyBoolean('TankOnlineInvert', true);
@@ -95,7 +102,7 @@ class ZisterneKachel extends IPSModule
     }
 
     /**
-     * Kompletter Zustand nach Nachrichtenvertrag v3.
+     * Kompletter Zustand nach Nachrichtenvertrag v4.
      * Rohwerte für Logik und Grafik, "txt" für die Anzeige (1:1 Symcon-Darstellung).
      */
     private function GetFullUpdateMessage(): string
@@ -116,6 +123,7 @@ class ZisterneKachel extends IPSModule
                 'level'  => $this->ReadValue('TankLevel'),
                 'fill'   => $this->ReadValue('TankFill'),
                 'dist'   => $this->ReadValue('TankDistance'),
+                'cfg'    => $this->ReadObjectID('TankSettings'),
                 'txt'    => [
                     'level' => $this->ReadFormatted('TankLevel'),
                     'fill'  => $this->ReadFormatted('TankFill'),
@@ -133,6 +141,7 @@ class ZisterneKachel extends IPSModule
                 'plan'   => $this->ReadNextRun('WellSchedule'),
                 'min'    => $this->ReadValue('WellMinLevel'),
                 'power'  => $wellPower,
+                'cfg'    => $this->ReadObjectID('WellSettings'),
                 'txt'    => [
                     'min'   => $this->ReadFormatted('WellMinLevel'),
                     // Summe hat keine Symcon-Darstellung: Text des Kanals mit der höheren Leistung (bei Gleichstand Kanal 2)
@@ -147,6 +156,7 @@ class ZisterneKachel extends IPSModule
                 'state'  => $this->PumpState([$houseStatus], $housePower),
                 'on'     => $houseStatus,
                 'power'  => $housePower,
+                'cfg'    => $this->ReadObjectID('HouseSettings'),
                 'txt'    => [
                     'power' => $this->ReadFormatted('HousePower')
                 ]
@@ -208,6 +218,12 @@ class ZisterneKachel extends IPSModule
         }
         $nextRun = IPS_GetEvent($eventID)['NextRun'];
         return $nextRun > 0 ? $nextRun : null;
+    }
+
+    private function ReadObjectID(string $property): ?int
+    {
+        $objectID = $this->ReadPropertyInteger($property);
+        return ($objectID > 0 && IPS_ObjectExists($objectID)) ? $objectID : null;
     }
 
     private function AnyOn(array $statuses): ?bool

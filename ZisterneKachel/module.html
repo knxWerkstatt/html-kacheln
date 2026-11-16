@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <!--
-  ZisterneKachel - Darstellung (HTML-SDK), Stufe 1: nur Anzeige
+  ZisterneKachel - Darstellung (HTML-SDK), Stufe 2: Anzeige + Zahnrad zu den Symcon-Einstellungen
   Hannes Hacker - KNX Werkstatt
-  Version: v6 (DURCHSTICH 2, vorübergehend)
-  Erstellt: 16.11.2026, 18:07
-  v6: Testknöpfe öffnen die Dummy-Instanz "Brunnenpumpe" (37840, Links), einer oben, einer mitten im Kasten;
-      Anzeige, ob Maus-/Touch-Ereignisse ankommen. Nur zum Test von Stufe 2, wird wieder ausgebaut.
-  v5: Durchstich 1, openObject auf Handbetrieb 23989 und Wochenplan 14986.
+  Version: v7
+  Erstellt: 16.11.2026, 18:14
+  v7: Zahnrad in der Fußzeile jedes Kastens; 2 s halten öffnet per openObject das Einstellungs-Objekt.
+      Testknöpfe der Durchstiche v5/v6 entfernt. Oberer Kachelbereich bleibt frei (Totzone am PC).
   v4: Anzeigetexte 1:1 aus der Symcon-Darstellung (Feld "txt"), keine eigene Zahlenformatierung mehr.
       Brunnenpumpe neu geordnet: aus/an, Leistung, Automatik Modus (freigegeben/gesperrt), Handbetrieb, Wochenplan.
   v3: Leistung in Watt, Mindestfüllstand von der Brunnenpumpe zur Zisterne verschoben,
@@ -14,7 +13,7 @@
   v2: fremde Nachrichten werden verworfen (Felder leerten sich bei Berührung),
       kein eigenes Scrollen mehr (Wischgeste geht an die Symcon-Seite),
       Verbraucher und Brunnen entfernt, Leitungen mit Pfeil in Flussrichtung.
-  Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v3.
+  Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v4.
   Die Kachel rechnet nicht: Zustand, Leistungssumme und Polarität kommen fertig vom Modul.
   Farben sind themenneutral (abgeleitet von currentColor), damit helles und dunkles Symcon-Theme passen.
 -->
@@ -85,7 +84,8 @@ body{box-sizing:border-box;padding:4px}
 .vals{display:flex;flex-direction:column;transition:opacity .3s}
 
 /* Fußzeile mit Verbindungsanzeige */
-.fresh{margin-top:auto;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:11px;color:var(--muted)}
+.fresh{margin-top:auto;padding-top:8px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.finfo{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
 .fresh .ftxt,.fresh time{white-space:nowrap}
 .lamp{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
 .fresh.ok .lamp{background:var(--good)}
@@ -127,20 +127,22 @@ body{box-sizing:border-box;padding:4px}
   .tankbody svg{max-width:130px;flex:0 0 42%}
   .big{text-align:left;margin-bottom:4px}
 }
-/* DURCHSTICH openObject: vorübergehend */
-.test{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;font-size:12px}
-.test button{font:inherit;padding:6px 10px;border-radius:6px;border:1px dashed var(--accent);background:transparent;color:inherit;cursor:pointer}
-.test output{color:var(--muted)}
+/* Zahnrad: 2 s halten, Ring füllt sich; Loslassen oder Verrutschen bricht ab */
+.gear{position:relative;width:30px;height:30px;margin:-6px -6px -6px 0;align-self:flex-end;padding:0;border:0;background:transparent;
+  color:var(--muted);cursor:pointer;flex:none;touch-action:none;user-select:none;-webkit-user-select:none;
+  -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.gear[hidden]{display:none}
+.gear svg{position:absolute;inset:0;width:100%;height:100%}
+.gear .ring{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:82;stroke-dashoffset:82;
+  transform:rotate(-90deg);transform-origin:15px 15px}
+.gear.hold{color:var(--accent)}
+.gear.hold .ring{stroke-dashoffset:0;transition:stroke-dashoffset 2s linear}
+.gear:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:50%}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <section class="tile" aria-label="Zisterne">
-  <!-- DURCHSTICH openObject: vorübergehend -->
-  <div class="test">
-    <button type="button" onclick="testOpen(37840)">TEST oben: Einstellungen Brunnenpumpe</button>
-    <output id="testOut">noch kein Ereignis</output>
-  </div>
   <div class="flow">
     <!-- Hauswasserwerk -->
     <div class="box" id="bDruck">
@@ -154,7 +156,7 @@ body{box-sizing:border-box;padding:4px}
         <div class="row"><span>aus / an</span><span class="v" id="dStat">–</span></div>
         <div class="row"><span>Leistung aktuell</span><span class="v" id="dPow">–</span></div>
       </div>
-      <div class="fresh" id="fDruck"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
+      <div class="fresh" id="fDruck"><span class="finfo"><span class="lamp"></span><span class="ftxt">–</span><time></time></span><button type="button" class="gear" id="gDruck" hidden aria-label="Einstellungen öffnen (2 Sekunden halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path fill="currentColor" d="M15 10.2a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6zm0 2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6z"/><path fill="currentColor" d="M13.6 6h2.8l.4 2.1 1.6.7 1.8-1.2 2 2-1.2 1.8.7 1.6 2.1.4v2.8l-2.1.4-.7 1.6 1.2 1.8-2 2-1.8-1.2-1.6.7-.4 2.1h-2.8l-.4-2.1-1.6-.7-1.8 1.2-2-2 1.2-1.8-.7-1.6L6 16.4v-2.8l2.1-.4.7-1.6-1.2-1.8 2-2 1.8 1.2 1.6-.7z" fill-rule="evenodd" opacity=".9"/></svg></button></div>
     </div>
     <div class="pipe" id="pA" aria-hidden="true"><span class="bar"></span><span class="head"></span></div>
 
@@ -186,7 +188,7 @@ body{box-sizing:border-box;padding:4px}
           <div class="row"><span>Mindestfüllstand</span><span class="v" id="bMin">–</span></div>
         </div>
       </div>
-      <div class="fresh" id="fTank"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
+      <div class="fresh" id="fTank"><span class="finfo"><span class="lamp"></span><span class="ftxt">–</span><time></time></span><button type="button" class="gear" id="gTank" hidden aria-label="Einstellungen öffnen (2 Sekunden halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path fill="currentColor" d="M15 10.2a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6zm0 2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6z"/><path fill="currentColor" d="M13.6 6h2.8l.4 2.1 1.6.7 1.8-1.2 2 2-1.2 1.8.7 1.6 2.1.4v2.8l-2.1.4-.7 1.6 1.2 1.8-2 2-1.8-1.2-1.6.7-.4 2.1h-2.8l-.4-2.1-1.6-.7-1.8 1.2-2-2 1.2-1.8-.7-1.6L6 16.4v-2.8l2.1-.4.7-1.6-1.2-1.8 2-2 1.8 1.2 1.6-.7z" fill-rule="evenodd" opacity=".9"/></svg></button></div>
     </div>
     <div class="pipe" id="pB" aria-hidden="true"><span class="bar"></span><span class="head"></span></div>
 
@@ -205,9 +207,7 @@ body{box-sizing:border-box;padding:4px}
         <div class="row"><span>Handbetrieb</span><span class="v" id="bHand">–</span></div>
         <div class="row"><span>Wochenplan</span><span class="v" id="bPlan">–</span></div>
       </div>
-      <!-- DURCHSTICH 2: Knopf mitten in der Kachel -->
-      <div class="test"><button type="button" onclick="testOpen(37840)">TEST Mitte: Einstellungen Brunnenpumpe</button></div>
-      <div class="fresh" id="fBrunnen"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
+      <div class="fresh" id="fBrunnen"><span class="finfo"><span class="lamp"></span><span class="ftxt">–</span><time></time></span><button type="button" class="gear" id="gBrunnen" hidden aria-label="Einstellungen öffnen (2 Sekunden halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path fill="currentColor" d="M15 10.2a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6zm0 2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6z"/><path fill="currentColor" d="M13.6 6h2.8l.4 2.1 1.6.7 1.8-1.2 2 2-1.2 1.8.7 1.6 2.1.4v2.8l-2.1.4-.7 1.6 1.2 1.8-2 2-1.8-1.2-1.6.7-.4 2.1h-2.8l-.4-2.1-1.6-.7-1.8 1.2-2-2 1.2-1.8-.7-1.6L6 16.4v-2.8l2.1-.4.7-1.6-1.2-1.8 2-2 1.8 1.2 1.6-.7z" fill-rule="evenodd" opacity=".9"/></svg></button></div>
     </div>
   </div>
 </section>
@@ -268,6 +268,9 @@ function setPill(id, state) {
 function render(m) {
   const t = m.tank || {}, b = m.brunnen || {}, h = m.haus || {};
   connection(t, 'bTank', 'fTank');
+  setGear('gTank', t.cfg);
+  setGear('gBrunnen', b.cfg);
+  setGear('gDruck', h.cfg);
   const okB = connection(b, 'bBrunnen', 'fBrunnen');
   const okH = connection(h, 'bDruck', 'fDruck');
 
@@ -315,22 +318,38 @@ function render(m) {
   $('pA').classList.toggle('on', hRun && okH);
 }
 
-// DURCHSTICH 2: zeigt, ob Maus-/Touch-Ereignisse überhaupt in der Kachel ankommen
-['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(ev =>
-  document.addEventListener(ev, e => {
-    const t = e.target && e.target.textContent ? e.target.textContent.trim().slice(0, 12) : '';
-    $('testOut').textContent = 'Ereignis: ' + ev + (t ? ' auf "' + t + '"' : '');
-  }, true));
-
-// DURCHSTICH openObject: vorübergehend
-function testOpen(id) {
-  const out = $('testOut');
-  if (typeof openObject !== 'function') { out.textContent = 'openObject nicht verfügbar'; return; }
-  try { openObject(id); out.textContent = 'openObject(' + id + ') aufgerufen'; }
-  catch (e) { out.textContent = 'Fehler: ' + e.message; }
+// Zahnrad: Ziel-IDs kommen vom Modul (cfg); 2 s halten öffnet die Symcon-Bedienung
+const HOLD_MS = 2000, MOVE_PX = 10;
+const gearTarget = { gTank: null, gBrunnen: null, gDruck: null };
+function setGear(id, target) {
+  gearTarget[id] = has(target) ? Number(target) : null;
+  $(id).hidden = gearTarget[id] === null;
 }
+function bindGear(id) {
+  const g = $(id);
+  let timer = null, x0 = 0, y0 = 0;
+  const cancel = () => { clearTimeout(timer); timer = null; g.classList.remove('hold'); };
+  g.addEventListener('pointerdown', e => {
+    if (gearTarget[id] === null) return;
+    e.preventDefault();
+    try { g.setPointerCapture(e.pointerId); } catch (err) { /* nicht kritisch */ }
+    x0 = e.clientX; y0 = e.clientY;
+    g.classList.add('hold');
+    timer = setTimeout(() => {
+      cancel();
+      if (typeof openObject === 'function') openObject(gearTarget[id]);
+      else console.warn('ZisterneKachel: openObject nicht verfügbar');
+    }, HOLD_MS);
+  });
+  g.addEventListener('pointermove', e => {
+    if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > MOVE_PX) cancel();
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => g.addEventListener(ev, cancel));
+  g.addEventListener('contextmenu', e => e.preventDefault());
+}
+['gTank', 'gBrunnen', 'gDruck'].forEach(bindGear);
 
-// Nur Nachrichten unseres Moduls annehmen (Vertrag v3: tank, brunnen, haus).
+// Nur Nachrichten unseres Moduls annehmen (Vertrag v4: tank, brunnen, haus).
 // Alles andere wird verworfen, die letzte gültige Anzeige bleibt stehen.
 function isOwnMessage(m) {
   return m !== null && typeof m === 'object'

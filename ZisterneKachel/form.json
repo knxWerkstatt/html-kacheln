@@ -9,7 +9,8 @@
                 { "type": "SelectVariable", "name": "TankFill", "caption": "Füllmenge l (FILLING)", "validVariableTypes": [1, 2] },
                 { "type": "SelectVariable", "name": "TankDistance", "caption": "Abstand Oberfläche cm (DISTANCE)", "validVariableTypes": [1, 2] },
                 { "type": "SelectVariable", "name": "TankOnline", "caption": "Verbindung (Watchdog Alarm)", "validVariableTypes": [0] },
-                { "type": "CheckBox", "name": "TankOnlineInvert", "caption": "Verbindung invertieren (true = keine Verbindung)" }
+                { "type": "CheckBox", "name": "TankOnlineInvert", "caption": "Verbindung invertieren (true = keine Verbindung)" },
+                { "type": "SelectObject", "name": "TankSettings", "caption": "Einstellungen (Zahnrad, leer = kein Zahnrad)" }
             ]
         },
         {
@@ -25,7 +26,8 @@
                 { "type": "SelectVariable", "name": "WellMinLevel", "caption": "Mindestfüllstand %", "validVariableTypes": [1, 2] },
                 { "type": "SelectEvent", "name": "WellSchedule", "caption": "Wochenplan (Ereignis)" },
                 { "type": "SelectVariable", "name": "WellOnline", "caption": "Verbindung (Erreichbar)", "validVariableTypes": [0] },
-                { "type": "CheckBox", "name": "WellOnlineInvert", "caption": "Verbindung invertieren (true = keine Verbindung)" }
+                { "type": "CheckBox", "name": "WellOnlineInvert", "caption": "Verbindung invertieren (true = keine Verbindung)" },
+                { "type": "SelectObject", "name": "WellSettings", "caption": "Einstellungen (Zahnrad, leer = kein Zahnrad)" }
             ]
         },
         {
@@ -36,7 +38,8 @@
                 { "type": "SelectVariable", "name": "HouseStatus", "caption": "Status aus / an", "validVariableTypes": [0] },
                 { "type": "SelectVariable", "name": "HousePower", "caption": "Leistung W", "validVariableTypes": [1, 2] },
                 { "type": "SelectVariable", "name": "HouseOnline", "caption": "Verbindung (Erreichbar)", "validVariableTypes": [0] },
-                { "type": "CheckBox", "name": "HouseOnlineInvert", "caption": "Verbindung invertieren (true = keine Verbindung)" }
+                { "type": "CheckBox", "name": "HouseOnlineInvert", "caption": "Verbindung invertieren (true = keine Verbindung)" },
+                { "type": "SelectObject", "name": "HouseSettings", "caption": "Einstellungen (Zahnrad, leer = kein Zahnrad)" }
             ]
         },
         {
