@@ -1,6 +1,6 @@
 # ZisterneKachel
 
-v2 · 16.11.2026 · Hannes Hacker - KNX Werkstatt
+v3 · 16.11.2026 · Hannes Hacker - KNX Werkstatt
 
 HTML-SDK-Kachel für die Kachel-Visualisierung: Zisterne mit Brunnenpumpe (Zufluss) und Hauswasserwerk (Abfluss).
 Stufe 1: nur Anzeige, keine Bedienung. Das Modul liest Variablen, schreibt nie.
@@ -47,5 +47,9 @@ Stufe 1: nur Anzeige, keine Bedienung. Das Modul liest Variablen, schreibt nie.
 | Pumpe "aus" | alle Kanäle aus |
 | Verbindung ok | grüner Rahmen |
 | Keine Verbindung | roter Rahmen, Stempel "KEINE VERBINDUNG", Werte abgeblendet, keine Bewegung |
+| Anzeigetexte | 1:1 aus der Symcon-Darstellung (GetValueFormatted); Leistung Brunnenpumpe = Text des Kanals mit der höheren Leistung |
+| Brunnenpumpe aus / an | an, wenn Kanal 1 oder Kanal 2 an ist |
+| Automatik Modus | Symcon-Text + "(freigegeben)" bei Kanal 2 an, "(gesperrt)" bei Kanal 2 aus |
+| Handbetrieb | "aktiv" (fett rot) bei Kanal 1 an, sonst "inaktiv" |
 | Fehlender Wert | Anzeige "–" |
 | Layout | ab 640 px Breite horizontal, darunter vertikal |

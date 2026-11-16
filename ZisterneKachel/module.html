@@ -2,14 +2,16 @@
 <!--
   ZisterneKachel - Darstellung (HTML-SDK), Stufe 1: nur Anzeige
   Hannes Hacker - KNX Werkstatt
-  Version: v3
-  Erstellt: 16.11.2026, 17:22
+  Version: v4
+  Erstellt: 16.11.2026, 17:47
+  v4: Anzeigetexte 1:1 aus der Symcon-Darstellung (Feld "txt"), keine eigene Zahlenformatierung mehr.
+      Brunnenpumpe neu geordnet: aus/an, Leistung, Automatik Modus (freigegeben/gesperrt), Handbetrieb, Wochenplan.
   v3: Leistung in Watt, Mindestfüllstand von der Brunnenpumpe zur Zisterne verschoben,
       Platz oben rechts für das Symcon-Vergrößern-Symbol.
   v2: fremde Nachrichten werden verworfen (Felder leerten sich bei Berührung),
       kein eigenes Scrollen mehr (Wischgeste geht an die Symcon-Seite),
       Verbraucher und Brunnen entfernt, Leitungen mit Pfeil in Flussrichtung.
-  Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v2.
+  Grundlage: Mockup zisterne_statuskachel_v4.html, Nachrichtenvertrag v3.
   Die Kachel rechnet nicht: Zustand, Leistungssumme und Polarität kommen fertig vom Modul.
   Farben sind themenneutral (abgeleitet von currentColor), damit helles und dunkles Symcon-Theme passen.
 -->
@@ -76,6 +78,7 @@ body{box-sizing:border-box;padding:4px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;min-height:28px}
 .row>span:first-child{color:var(--muted)}
 .v{font-variant-numeric:tabular-nums;font-weight:500;text-align:right;white-space:nowrap}
+.v.alert{color:var(--crit);font-weight:700}
 .vals{display:flex;flex-direction:column;transition:opacity .3s}
 
 /* Fußzeile mit Verbindungsanzeige */
@@ -100,7 +103,6 @@ body{box-sizing:border-box;padding:4px}
 .tankbody svg{width:100%;max-width:150px;height:auto;display:block}
 .kpi{display:flex;flex-direction:column;width:100%}
 .big{font-size:30px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;text-align:center}
-.big small{font-size:15px;font-weight:400}
 #wave1{animation:wave 4s linear infinite}
 #wave2{animation:wave 6s linear infinite reverse}
 @keyframes wave{from{transform:translateX(-80px)}to{transform:translateX(0)}}
@@ -166,7 +168,7 @@ body{box-sizing:border-box;padding:4px}
           <g id="ticks"></g>
         </svg>
         <div class="kpi">
-          <div class="big"><span id="pct">–</span><small> %</small></div>
+          <div class="big" id="pct">–</div>
           <div class="row"><span>Füllmenge</span><span class="v" id="ltr">–</span></div>
           <div class="row"><span>Abstand Oberfläche</span><span class="v" id="dist">–</span></div>
           <div class="row"><span>Mindestfüllstand</span><span class="v" id="bMin">–</span></div>
@@ -185,11 +187,11 @@ body{box-sizing:border-box;padding:4px}
         <h3>Brunnenpumpe</h3><span class="pill none" id="bPill">–</span>
       </div>
       <div class="vals">
-        <div class="row"><span>Automatik Modus</span><span class="v" id="bMode">–</span></div>
-        <div class="row"><span>Automatik Status</span><span class="v" id="bAuto">–</span></div>
-        <div class="row"><span>Wochenplan</span><span class="v" id="bPlan">–</span></div>
-        <div class="row"><span>Handbetrieb</span><span class="v" id="bHand">–</span></div>
+        <div class="row"><span>aus / an</span><span class="v" id="bOn">–</span></div>
         <div class="row"><span>Leistung aktuell</span><span class="v" id="bPow">–</span></div>
+        <div class="row"><span>Automatik Modus</span><span class="v" id="bMode">–</span></div>
+        <div class="row"><span>Handbetrieb</span><span class="v" id="bHand">–</span></div>
+        <div class="row"><span>Wochenplan</span><span class="v" id="bPlan">–</span></div>
       </div>
       <div class="fresh" id="fBrunnen"><span class="lamp"></span><span class="ftxt">–</span><time></time></div>
     </div>
@@ -210,9 +212,9 @@ const DASH = '–';
   $('ticks').innerHTML = s;
 })();
 
-// Formatierung: null bleibt "–", es wird nichts erfunden
+// Anzeige: Texte kommen fertig aus der Symcon-Darstellung; null bleibt "–", es wird nichts erfunden
 const has = v => v !== null && v !== undefined;
-const num = (v, d, unit) => has(v) ? Number(v).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }) + unit : DASH;
+const txt = (o, k) => (o && has(o[k])) ? String(o[k]) : DASH;
 const onoff = v => has(v) ? (v ? 'an' : 'aus') : DASH;
 const two = n => String(n).padStart(2, '0');
 function stamp(sec) {
@@ -258,9 +260,9 @@ function render(m) {
   // Zisterne
   const lvl = has(t.level) ? Math.max(0, Math.min(100, Number(t.level))) : null;
   $('level').style.transform = `translateY(${lvl === null ? 230 : 10 + (1 - lvl / 100) * 200 - 4}px)`;
-  $('pct').textContent = has(t.level) ? num(t.level, 0, '') : DASH;
-  $('ltr').textContent = num(t.fill, 0, ' l');
-  $('dist').textContent = num(t.dist, 0, ' cm');
+  $('pct').textContent = txt(t.txt, 'level');
+  $('ltr').textContent = txt(t.txt, 'fill');
+  $('dist').textContent = txt(t.txt, 'dist');
   const min = has(b.min) ? Number(b.min) : null;
   const my = min === null ? -10 : 10 + (1 - min / 100) * 200;
   $('minLine').setAttribute('y1', my); $('minLine').setAttribute('y2', my);
@@ -275,12 +277,17 @@ function render(m) {
 
   // Brunnenpumpe
   setPill('bPill', b.state);
-  $('bMode').textContent = has(b.mode) ? b.mode : DASH;
-  $('bAuto').textContent = onoff(b.auto);
+  $('bOn').textContent = onoff(b.on);
+  $('bPow').textContent = txt(b.txt, 'power');
+  // Automatik Modus mit Zusatz: Kanal 2 an = freigegeben, aus = gesperrt
+  $('bMode').textContent = !has(b.mode) ? DASH
+    : b.mode + (has(b.auto) ? (b.auto ? ' (freigegeben)' : ' (gesperrt)') : '');
+  // Handbetrieb (Kanal 1): aktiv fett rot, weil er den Schwimmer überbrückt
+  const hand = $('bHand');
+  hand.textContent = has(b.hand) ? (b.hand ? 'aktiv' : 'inaktiv') : DASH;
+  hand.classList.toggle('alert', b.hand === true);
   $('bPlan').textContent = planText(b.plan);
-  $('bHand').textContent = onoff(b.hand);
-  $('bMin').textContent = num(b.min, 0, ' %');
-  $('bPow').textContent = num(b.power, 0, ' W');
+  $('bMin').textContent = txt(b.txt, 'min');
   const bRun = b.state === 'run';
   $('bBrunnen').classList.toggle('running', bRun);
   $('pB').classList.toggle('on', bRun && okB);
@@ -288,13 +295,13 @@ function render(m) {
   // Hauswasserwerk
   setPill('dPill', h.state);
   $('dStat').textContent = onoff(h.on);
-  $('dPow').textContent = num(h.power, 0, ' W');
+  $('dPow').textContent = txt(h.txt, 'power');
   const hRun = h.state === 'run';
   $('bDruck').classList.toggle('running', hRun);
   $('pA').classList.toggle('on', hRun && okH);
 }
 
-// Nur Nachrichten unseres Moduls annehmen (Vertrag v2: tank, brunnen, haus).
+// Nur Nachrichten unseres Moduls annehmen (Vertrag v3: tank, brunnen, haus).
 // Alles andere wird verworfen, die letzte gültige Anzeige bleibt stehen.
 function isOwnMessage(m) {
   return m !== null && typeof m === 'object'

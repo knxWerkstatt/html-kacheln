@@ -7,11 +7,13 @@ declare(strict_types=1);
  * Stufe 1: nur Anzeige (Modul -> Kachel), keine Bedienung.
  *
  * Hannes Hacker - KNX Werkstatt
- * Version: v2
- * Erstellt: 16.11.2026, 17:22
+ * Version: v3
+ * Erstellt: 16.11.2026, 17:47
+ * v3: Anzeigetexte 1:1 aus der Symcon-Darstellung (GetValueFormatted) im Feld "txt",
+ *     Brunnenpumpe mit "on" (Kanal 1 oder 2 an); Leistungstext = Text des Kanals mit der höheren Leistung.
  * v2: Leistung in Watt (Quellen liefern W), Laufschwelle als neue Eigenschaft RunThresholdW, Vorgabe 10 W.
  *
- * Grundlage: variablenliste_zisterne_v2.md, nachrichtenvertrag_zisterne_v2.md
+ * Grundlage: variablenliste_zisterne_v3.md, nachrichtenvertrag_zisterne_v3.md
  * - Alle Quellvariablen werden im Instanzformular ausgewählt, keine IDs im Code.
  * - Bei jeder Aktualisierung einer Quellvariable wird der komplette Zustand an die Kachel geschickt.
  * - Berechnungen (Pumpenzustand, Leistungssumme, Polarität Verbindung) erfolgen nur hier, nicht in der Kachel.
@@ -93,13 +95,16 @@ class ZisterneKachel extends IPSModule
     }
 
     /**
-     * Kompletter Zustand nach Nachrichtenvertrag v2 (Leistung in Watt).
+     * Kompletter Zustand nach Nachrichtenvertrag v3.
+     * Rohwerte für Logik und Grafik, "txt" für die Anzeige (1:1 Symcon-Darstellung).
      */
     private function GetFullUpdateMessage(): string
     {
         $wellStatus1 = $this->ReadValue('WellStatus1');
         $wellStatus2 = $this->ReadValue('WellStatus2');
-        $wellPower = $this->SumOrNull([$this->ReadFloat('WellPower1'), $this->ReadFloat('WellPower2')]);
+        $wellPower1 = $this->ReadFloat('WellPower1');
+        $wellPower2 = $this->ReadFloat('WellPower2');
+        $wellPower = $this->SumOrNull([$wellPower1, $wellPower2]);
 
         $houseStatus = $this->ReadValue('HouseStatus');
         $housePower = $this->ReadFloat('HousePower');
@@ -110,25 +115,41 @@ class ZisterneKachel extends IPSModule
                 'ts'     => $this->ReadUpdated('TankLevel'),
                 'level'  => $this->ReadValue('TankLevel'),
                 'fill'   => $this->ReadValue('TankFill'),
-                'dist'   => $this->ReadValue('TankDistance')
+                'dist'   => $this->ReadValue('TankDistance'),
+                'txt'    => [
+                    'level' => $this->ReadFormatted('TankLevel'),
+                    'fill'  => $this->ReadFormatted('TankFill'),
+                    'dist'  => $this->ReadFormatted('TankDistance')
+                ]
             ],
             'brunnen' => [
                 'online' => $this->ReadOnline('WellOnline', 'WellOnlineInvert'),
                 'ts'     => $this->ReadUpdated('WellStatus2'),
                 'state'  => $this->PumpState([$wellStatus1, $wellStatus2], $wellPower),
+                'on'     => $this->AnyOn([$wellStatus1, $wellStatus2]),
                 'mode'   => $this->ReadFormatted('WellMode'),
                 'auto'   => $wellStatus2,
                 'hand'   => $wellStatus1,
                 'plan'   => $this->ReadNextRun('WellSchedule'),
                 'min'    => $this->ReadValue('WellMinLevel'),
-                'power'  => $wellPower
+                'power'  => $wellPower,
+                'txt'    => [
+                    'min'   => $this->ReadFormatted('WellMinLevel'),
+                    // Summe hat keine Symcon-Darstellung: Text des Kanals mit der höheren Leistung (bei Gleichstand Kanal 2)
+                    'power' => ($wellPower1 ?? -1) > ($wellPower2 ?? -1)
+                        ? $this->ReadFormatted('WellPower1')
+                        : ($wellPower2 !== null ? $this->ReadFormatted('WellPower2') : null)
+                ]
             ],
             'haus' => [
                 'online' => $this->ReadOnline('HouseOnline', 'HouseOnlineInvert'),
                 'ts'     => $this->ReadUpdated('HouseStatus'),
                 'state'  => $this->PumpState([$houseStatus], $housePower),
                 'on'     => $houseStatus,
-                'power'  => $housePower
+                'power'  => $housePower,
+                'txt'    => [
+                    'power' => $this->ReadFormatted('HousePower')
+                ]
             ]
         ];
 
@@ -187,6 +208,14 @@ class ZisterneKachel extends IPSModule
         }
         $nextRun = IPS_GetEvent($eventID)['NextRun'];
         return $nextRun > 0 ? $nextRun : null;
+    }
+
+    private function AnyOn(array $statuses): ?bool
+    {
+        $present = array_filter($statuses, function ($v) {
+            return $v !== null;
+        });
+        return count($present) ? in_array(true, $present, true) : null;
     }
 
     private function SumOrNull(array $values): ?float
