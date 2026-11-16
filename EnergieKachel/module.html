@@ -3,8 +3,9 @@
   EnergieKachel - Darstellung (HTML-SDK): Energiefluss Inselanlage
   PV 3 kW, PV 6 kW -> Hybrid-WR SI 8 mit Batterie -> Verbrauch -> Brunnenpumpe, Hauswasserwerk, Poolpumpe, Rest
   Hannes Hacker - KNX Werkstatt
-  Version: v2
-  Erstellt: 16.11.2026, 21:17
+  Version: v3
+  Erstellt: 16.11.2026, 21:22
+  v3: schmal (Handy) größere Schrift, v. a. Bereichsüberschriften; breit unverändert.
   v2: Auge (Detailansicht) in der Fußzeile aller 7 Kästen, Bedienung wie Zahnrad der PoolKachel (halten, ui.hold);
       Zeitstempel von heute nur "HH:MM".
   Grundlage: energie_mockup_v2.html, energie_nachrichtenvertrag_v2.md; Regeln wie PoolKachel v3.
@@ -155,6 +156,16 @@ body{box-sizing:border-box;padding:4px}
   .wrpart .val{font-size:19px}
   .hpipe{max-width:none}
   .load .lbl b{font-size:14px}
+  /* v3: Handy hat Platz nach unten: Schrift größer, v. a. Bereichsüberschriften */
+  .bh{min-height:26px}
+  .bh h3,.cons .bh h3{font-size:16px;font-weight:600}
+  .bh svg,.cons .bh svg{width:24px;height:24px}
+  #bPv3 .val,#bPv6 .val,.cons .val{font-size:21px}
+  .wrpart .val{font-size:22px} .soc .val{font-size:22px}
+  .foot,.sub,.tfoot{font-size:12.5px}
+  #bPv3 .foot,#bPv6 .foot,.cons .foot{padding-left:32px}
+  .load .lbl{font-size:13px} .load .lbl b{font-size:16px} .load .lbl em{font-size:11.5px}
+  #bPv3,#bPv6,.cons .box{padding:8px 10px}
 }
 @media (prefers-reduced-motion:reduce){.tile *{animation:none!important;transition:none!important}}
 </style>
