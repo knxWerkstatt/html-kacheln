@@ -2,8 +2,10 @@
 <!--
   ZisterneKachel - Darstellung (HTML-SDK), Stufe 1: nur Anzeige
   Hannes Hacker - KNX Werkstatt
-  Version: v4
-  Erstellt: 16.11.2026, 17:47
+  Version: v5 (DURCHSTICH, vorübergehend)
+  Erstellt: 16.11.2026, 17:57
+  v5: zwei Testknöpfe für openObject (Handbetrieb 23989, Wochenplan 14986), IDs fest eingetragen.
+      Nur zum Test von Stufe 2, wird wieder ausgebaut.
   v4: Anzeigetexte 1:1 aus der Symcon-Darstellung (Feld "txt"), keine eigene Zahlenformatierung mehr.
       Brunnenpumpe neu geordnet: aus/an, Leistung, Automatik Modus (freigegeben/gesperrt), Handbetrieb, Wochenplan.
   v3: Leistung in Watt, Mindestfüllstand von der Brunnenpumpe zur Zisterne verschoben,
@@ -124,11 +126,21 @@ body{box-sizing:border-box;padding:4px}
   .tankbody svg{max-width:130px;flex:0 0 42%}
   .big{text-align:left;margin-bottom:4px}
 }
+/* DURCHSTICH openObject: vorübergehend */
+.test{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;font-size:12px}
+.test button{font:inherit;padding:6px 10px;border-radius:6px;border:1px dashed var(--accent);background:transparent;color:inherit;cursor:pointer}
+.test output{color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <section class="tile" aria-label="Zisterne">
+  <!-- DURCHSTICH openObject: vorübergehend -->
+  <div class="test">
+    <button type="button" onclick="testOpen(23989)">TEST Handbetrieb öffnen</button>
+    <button type="button" onclick="testOpen(14986)">TEST Wochenplan öffnen</button>
+    <output id="testOut"></output>
+  </div>
   <div class="flow">
     <!-- Hauswasserwerk -->
     <div class="box" id="bDruck">
@@ -299,6 +311,14 @@ function render(m) {
   const hRun = h.state === 'run';
   $('bDruck').classList.toggle('running', hRun);
   $('pA').classList.toggle('on', hRun && okH);
+}
+
+// DURCHSTICH openObject: vorübergehend
+function testOpen(id) {
+  const out = $('testOut');
+  if (typeof openObject !== 'function') { out.textContent = 'openObject nicht verfügbar'; return; }
+  try { openObject(id); out.textContent = 'openObject(' + id + ') aufgerufen'; }
+  catch (e) { out.textContent = 'Fehler: ' + e.message; }
 }
 
 // Nur Nachrichten unseres Moduls annehmen (Vertrag v3: tank, brunnen, haus).
