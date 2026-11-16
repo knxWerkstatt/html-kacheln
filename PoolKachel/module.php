@@ -3,15 +3,16 @@
 declare(strict_types=1);
 
 /**
- * PoolKachel - HTML-SDK-Kachel für den Pool: Poolinfo (Bayrol) und Poolbedienung (Poolpumpe)
- * Anzeige + Zahnrad bei der Poolbedienung, das per openObject eine Dummy-Instanz mit dem Schalter öffnet.
+ * PoolKachel - HTML-SDK-Kachel für den Pool: Werte (Bayrol) und Pumpe (Poolpumpe)
+ * Anzeige + Zahnrad bei der Pumpe, das per openObject eine Dummy-Instanz mit dem Schalter öffnet.
  * Das Modul selbst schreibt nie.
  *
  * Hannes Hacker - KNX Werkstatt
- * Version: v1
- * Erstellt: 16.11.2026, 19:26
+ * Version: v2
+ * Erstellt: 16.11.2026, 19:57
+ * v2: Bereiche heißen "Werte" und "Pumpe"; InfoOnlineInvert Vorgabe aus (Watchdog-Skript liefert true = verbunden).
  *
- * Grundlage: pool_variablenliste_v1.md, pool_nachrichtenvertrag_v1.md, Aufbau wie ZisterneKachel v5
+ * Grundlage: pool_variablenliste_v2.md, pool_nachrichtenvertrag_v2.md, Aufbau wie ZisterneKachel v5
  * - Alle Quellvariablen werden im Instanzformular ausgewählt, keine IDs im Code.
  * - Bei jeder Aktualisierung einer Quellvariable wird der komplette Zustand an die Kachel geschickt.
  * - Anzeigetexte 1:1 per GetValueFormatted; Wertfarben aus der Symcon-Darstellung (IPS_GetVariablePresentation).
@@ -20,7 +21,7 @@ declare(strict_types=1);
  */
 class PoolKachel extends IPSModule
 {
-    // Poolinfo-Werte: Eigenschaft => Schlüssel in der Nachricht
+    // Werte: Eigenschaft => Schlüssel in der Nachricht
     private const INFO_VALUES = [
         'InfoTemp'  => 'temp',
         'InfoPh'    => 'ph',
@@ -43,14 +44,15 @@ class PoolKachel extends IPSModule
             $this->RegisterPropertyInteger($property, 0);
         }
 
-        // Einstellungs-Objekt der Poolbedienung (Dummy-Instanz mit Link auf den Schalter); 0 = kein Zahnrad
+        // Einstellungs-Objekt der Pumpe (Dummy-Instanz mit Link auf den Schalter); 0 = kein Zahnrad
         $this->RegisterPropertyInteger('PumpSettings', 0);
 
         // Haltezeit Zahnrad in ganzen Sekunden; 0 = Öffnen per kurzem Antippen
         $this->RegisterPropertyInteger('SettingsHoldSeconds', 2);
 
-        // Polarität der Verbindungsvariablen: Watchdog "Alarm" = true bei Problem, Shelly "Erreichbar" = true bei ok
-        $this->RegisterPropertyBoolean('InfoOnlineInvert', true);
+        // Polarität der Verbindungsvariablen: Vorgabe true = verbunden (Watchdog-Skript, Shelly "Erreichbar");
+        // invertieren nur für Quellen mit true = Störung
+        $this->RegisterPropertyBoolean('InfoOnlineInvert', false);
         $this->RegisterPropertyBoolean('PumpOnlineInvert', false);
 
         // Pumpe gilt als "läuft", wenn die Leistung (Watt) diese Schwelle überschreitet
@@ -108,7 +110,7 @@ class PoolKachel extends IPSModule
      */
     private function GetFullUpdateMessage(): string
     {
-        // Poolinfo: je Wert Text und Farben; Zeitstempel = neueste Aktualisierung der vier Werte
+        // Werte: je Wert Text und Farben; Zeitstempel = neueste Aktualisierung der vier Werte
         $info = [
             'online' => $this->ReadOnline('InfoOnline', 'InfoOnlineInvert'),
             'ts'     => $this->NewestUpdate(array_keys(self::INFO_VALUES))
