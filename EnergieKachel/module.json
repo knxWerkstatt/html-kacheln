@@ -1,0 +1,14 @@
+{
+    "id": "{F05DDA5B-3FBD-4334-A1E9-4C24C12C9523}",
+    "name": "EnergieKachel",
+    "type": 3,
+    "vendor": "KNX Werkstatt",
+    "aliases": [
+        "Energie Kachel"
+    ],
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+    "prefix": "EKA",
+    "url": "https://github.com/knxWerkstatt/html-kacheln"
+}

@@ -1,0 +1,227 @@
+{
+    "elements": [
+        {
+            "type": "ExpansionPanel",
+            "caption": "PV 3 kW",
+            "expanded": true,
+            "items": [
+                {
+                    "type": "SelectVariable",
+                    "name": "Pv3Power",
+                    "caption": "Leistung W",
+                    "validVariableTypes": [
+                        1,
+                        2
+                    ]
+                },
+                {
+                    "type": "SelectVariable",
+                    "name": "Pv3Online",
+                    "caption": "Verbindung (true = verbunden)",
+                    "validVariableTypes": [
+                        0
+                    ]
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "Pv3OnlineInvert",
+                    "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "PV 6 kW",
+            "expanded": true,
+            "items": [
+                {
+                    "type": "SelectVariable",
+                    "name": "Pv6Power",
+                    "caption": "Leistung W",
+                    "validVariableTypes": [
+                        1,
+                        2
+                    ]
+                },
+                {
+                    "type": "SelectVariable",
+                    "name": "Pv6Online",
+                    "caption": "Verbindung (true = verbunden)",
+                    "validVariableTypes": [
+                        0
+                    ]
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "Pv6OnlineInvert",
+                    "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Hybrid-WR mit Batterie",
+            "expanded": true,
+            "items": [
+                {
+                    "type": "SelectVariable",
+                    "name": "WrPower",
+                    "caption": "Batterieleistung W (positiv = Entladen)",
+                    "validVariableTypes": [
+                        1,
+                        2
+                    ]
+                },
+                {
+                    "type": "SelectVariable",
+                    "name": "WrSoc",
+                    "caption": "Ladestand %",
+                    "validVariableTypes": [
+                        1,
+                        2
+                    ]
+                },
+                {
+                    "type": "SelectVariable",
+                    "name": "WrOnline",
+                    "caption": "Verbindung (true = verbunden)",
+                    "validVariableTypes": [
+                        0
+                    ]
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "WrOnlineInvert",
+                    "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Verbrauch",
+            "expanded": true,
+            "items": [
+                {
+                    "type": "SelectVariable",
+                    "name": "LoadPower",
+                    "caption": "Verbrauch W (Eigenverbrauch)",
+                    "validVariableTypes": [
+                        1,
+                        2
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Brunnenpumpe",
+            "expanded": true,
+            "items": [
+                {
+                    "type": "SelectVariable",
+                    "name": "WellPower1",
+                    "caption": "Leistung Kanal 1 W",
+                    "validVariableTypes": [
+                        1,
+                        2
+                    ]
+                },
+                {
+                    "type": "SelectVariable",
+                    "name": "WellPower2",
+                    "caption": "Leistung Kanal 2 W",
+                    "validVariableTypes": [
+                        1,
+                        2
+                    ]
+                },
+                {
+                    "type": "SelectVariable",
+                    "name": "WellOnline",
+                    "caption": "Verbindung (true = verbunden)",
+                    "validVariableTypes": [
+                        0
+                    ]
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "WellOnlineInvert",
+                    "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Hauswasserwerk",
+            "expanded": true,
+            "items": [
+                {
+                    "type": "SelectVariable",
+                    "name": "HousePower",
+                    "caption": "Leistung W",
+                    "validVariableTypes": [
+                        1,
+                        2
+                    ]
+                },
+                {
+                    "type": "SelectVariable",
+                    "name": "HouseOnline",
+                    "caption": "Verbindung (true = verbunden)",
+                    "validVariableTypes": [
+                        0
+                    ]
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "HouseOnlineInvert",
+                    "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Poolpumpe",
+            "expanded": true,
+            "items": [
+                {
+                    "type": "SelectVariable",
+                    "name": "PoolPower",
+                    "caption": "Leistung W",
+                    "validVariableTypes": [
+                        1,
+                        2
+                    ]
+                },
+                {
+                    "type": "SelectVariable",
+                    "name": "PoolOnline",
+                    "caption": "Verbindung (true = verbunden)",
+                    "validVariableTypes": [
+                        0
+                    ]
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "PoolOnlineInvert",
+                    "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Allgemein",
+            "expanded": false,
+            "items": [
+                {
+                    "type": "NumberSpinner",
+                    "name": "RunThresholdW",
+                    "caption": "Schwelle für Fluss und Lade-/Entladerichtung",
+                    "digits": 0,
+                    "minimum": 0,
+                    "suffix": " W"
+                }
+            ]
+        }
+    ]
+}
