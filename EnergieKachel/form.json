@@ -26,6 +26,11 @@
                     "type": "CheckBox",
                     "name": "Pv3OnlineInvert",
                     "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                },
+                {
+                    "type": "SelectObject",
+                    "name": "Pv3Details",
+                    "caption": "Detailansicht (Auge, leer = kein Auge)"
                 }
             ]
         },
@@ -55,6 +60,11 @@
                     "type": "CheckBox",
                     "name": "Pv6OnlineInvert",
                     "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                },
+                {
+                    "type": "SelectObject",
+                    "name": "Pv6Details",
+                    "caption": "Detailansicht (Auge, leer = kein Auge)"
                 }
             ]
         },
@@ -93,6 +103,11 @@
                     "type": "CheckBox",
                     "name": "WrOnlineInvert",
                     "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                },
+                {
+                    "type": "SelectObject",
+                    "name": "WrDetails",
+                    "caption": "Detailansicht (Auge, leer = kein Auge)"
                 }
             ]
         },
@@ -147,6 +162,11 @@
                     "type": "CheckBox",
                     "name": "WellOnlineInvert",
                     "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                },
+                {
+                    "type": "SelectObject",
+                    "name": "WellDetails",
+                    "caption": "Detailansicht (Auge, leer = kein Auge)"
                 }
             ]
         },
@@ -176,6 +196,11 @@
                     "type": "CheckBox",
                     "name": "HouseOnlineInvert",
                     "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                },
+                {
+                    "type": "SelectObject",
+                    "name": "HouseDetails",
+                    "caption": "Detailansicht (Auge, leer = kein Auge)"
                 }
             ]
         },
@@ -205,6 +230,23 @@
                     "type": "CheckBox",
                     "name": "PoolOnlineInvert",
                     "caption": "Invertieren (nur wenn die Quelle true = Störung liefert, z. B. Watchdog-Alarm)"
+                },
+                {
+                    "type": "SelectObject",
+                    "name": "PoolDetails",
+                    "caption": "Detailansicht (Auge, leer = kein Auge)"
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Restverbraucher",
+            "expanded": true,
+            "items": [
+                {
+                    "type": "SelectObject",
+                    "name": "RestDetails",
+                    "caption": "Detailansicht (Auge, leer = kein Auge)"
                 }
             ]
         },
@@ -220,6 +262,14 @@
                     "digits": 0,
                     "minimum": 0,
                     "suffix": " W"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "DetailsHoldSeconds",
+                    "caption": "Auge halten bis Detailansicht öffnet (0 = sofort antippen)",
+                    "minimum": 0,
+                    "maximum": 10,
+                    "suffix": " s"
                 }
             ]
         }

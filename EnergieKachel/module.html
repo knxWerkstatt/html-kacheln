@@ -3,9 +3,11 @@
   EnergieKachel - Darstellung (HTML-SDK): Energiefluss Inselanlage
   PV 3 kW, PV 6 kW -> Hybrid-WR SI 8 mit Batterie -> Verbrauch -> Brunnenpumpe, Hauswasserwerk, Poolpumpe, Rest
   Hannes Hacker - KNX Werkstatt
-  Version: v1
-  Erstellt: 16.11.2026, 20:58
-  Grundlage: energie_mockup_v2.html, energie_nachrichtenvertrag_v1.md; Regeln wie PoolKachel v3.
+  Version: v2
+  Erstellt: 16.11.2026, 21:17
+  v2: Auge (Detailansicht) in der Fußzeile aller 7 Kästen, Bedienung wie Zahnrad der PoolKachel (halten, ui.hold);
+      Zeitstempel von heute nur "HH:MM".
+  Grundlage: energie_mockup_v2.html, energie_nachrichtenvertrag_v2.md; Regeln wie PoolKachel v3.
   Die Kachel rechnet nicht: Polarität, Restverbrauch, Gültigkeit und Zeitstempel kommen fertig vom Modul.
   Sie leitet nur Fluss und Batterierichtung aus power und ui.thr ab und formatiert Zeitstempel.
   Farben themenneutral (abgeleitet von currentColor), Text per prefers-color-scheme.
@@ -52,8 +54,17 @@ body{box-sizing:border-box;padding:4px}
 .sub{font-size:11px;color:var(--muted);min-height:14px}
 .box.stale .val,.box.stale .inner{opacity:.4}
 
-.foot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden}
-.foot span{overflow:hidden;text-overflow:ellipsis}
+.foot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;min-height:16px}
+.foot .ft{overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* Auge (Detailansicht): Fußzeile rechts, Bedienung wie Zahnrad der PoolKachel; bleibt bei getrennter Verbindung bedienbar */
+.eye{position:relative;width:34px;height:34px;margin:-9px -8px -9px auto;padding:0;border:0;background:transparent;z-index:4;
+  color:var(--muted);cursor:pointer;flex:none;touch-action:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.eye[hidden]{display:none}
+.eye svg{position:absolute;inset:3px;width:28px;height:28px}
+.eye .ring{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:82;stroke-dashoffset:82;transform:rotate(-90deg);transform-origin:15px 15px}
+.eye.hold{color:var(--accent)}
+.eye.hold .ring{stroke-dashoffset:0;transition:stroke-dashoffset var(--hold,2s) linear}
 .lamp{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
 .ok .lamp{background:var(--good)}
 .lost .lamp{background:var(--crit);animation:blink 1.6s ease-in-out infinite}
@@ -157,13 +168,13 @@ body{box-sizing:border-box;padding:4px}
         <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
         <div class="bh"><svg viewBox="0 0 30 30"><circle cx="24" cy="6" r="4" fill="var(--sun)"/><path d="M4 26 L8 12 H22 L26 26 Z" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M6 19 H24 M11 12 L10 26 M19 12 L20 26" stroke="var(--accent)" stroke-width="1.5"/></svg><h3>PV 3 kW</h3></div>
         <div class="val" id="vPv3">–</div>
-        <div class="foot"><span class="lamp"></span><span>–</span></div>
+        <div class="foot"><span class="lamp"></span><span class="ft">–</span><button type="button" class="eye" data-k="pv3" hidden aria-label="Details öffnen (halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path d="M5 15 Q15 6 25 15 Q15 24 5 15 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="15" cy="15" r="3.2" fill="currentColor"/></svg></button></div>
       </div>
       <div class="box" id="bPv6">
         <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
         <div class="bh"><svg viewBox="0 0 30 30"><circle cx="24" cy="6" r="4" fill="var(--sun)"/><path d="M4 26 L8 12 H22 L26 26 Z" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M6 19 H24 M11 12 L10 26 M19 12 L20 26" stroke="var(--accent)" stroke-width="1.5"/></svg><h3>PV 6 kW</h3></div>
         <div class="val" id="vPv6">–</div>
-        <div class="foot"><span class="lamp"></span><span>–</span></div>
+        <div class="foot"><span class="lamp"></span><span class="ft">–</span><button type="button" class="eye" data-k="pv6" hidden aria-label="Details öffnen (halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path d="M5 15 Q15 6 25 15 Q15 24 5 15 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="15" cy="15" r="3.2" fill="currentColor"/></svg></button></div>
       </div>
       <div class="vpipe" id="pPv3"><span class="bar"></span><span class="head"></span></div>
       <div class="vpipe" id="pPv6"><span class="bar"></span><span class="head"></span></div>
@@ -185,7 +196,7 @@ body{box-sizing:border-box;padding:4px}
             <div class="soc"><span class="sub">Ladestand</span><span class="val" id="vSoc">–</span></div>
           </div>
         </div>
-        <div class="foot"><span class="lamp"></span><span>–</span></div>
+        <div class="foot"><span class="lamp"></span><span class="ft">–</span><button type="button" class="eye" data-k="wr" hidden aria-label="Details öffnen (halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path d="M5 15 Q15 6 25 15 Q15 24 5 15 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="15" cy="15" r="3.2" fill="currentColor"/></svg></button></div>
       </div>
 
       <!-- Verbrauch -->
@@ -199,21 +210,21 @@ body{box-sizing:border-box;padding:4px}
         <div class="box" id="bBrunnen">
           <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
           <div class="bh"><svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--accent)" stroke-width="2"/><g class="rotor"><path d="M15 15 L15 5 A10 10 0 0 1 23 10 Z M15 15 L25 18 A10 10 0 0 1 18 25 Z M15 15 L8 22 A10 10 0 0 1 5 12 Z" fill="var(--accent)"/></g></svg><h3>Brunnenpumpe</h3></div>
-          <div class="val">–</div><div class="foot"><span class="lamp"></span><span>–</span></div>
+          <div class="val">–</div><div class="foot"><span class="lamp"></span><span class="ft">–</span><button type="button" class="eye" data-k="brunnen" hidden aria-label="Details öffnen (halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path d="M5 15 Q15 6 25 15 Q15 24 5 15 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="15" cy="15" r="3.2" fill="currentColor"/></svg></button></div>
         </div>
         <div class="box" id="bHww">
           <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
           <div class="bh"><svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--accent)" stroke-width="2"/><g class="rotor"><path d="M15 15 L15 5 A10 10 0 0 1 23 10 Z M15 15 L25 18 A10 10 0 0 1 18 25 Z M15 15 L8 22 A10 10 0 0 1 5 12 Z" fill="var(--accent)"/></g></svg><h3>Hauswasserwerk</h3></div>
-          <div class="val">–</div><div class="foot"><span class="lamp"></span><span>–</span></div>
+          <div class="val">–</div><div class="foot"><span class="lamp"></span><span class="ft">–</span><button type="button" class="eye" data-k="hww" hidden aria-label="Details öffnen (halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path d="M5 15 Q15 6 25 15 Q15 24 5 15 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="15" cy="15" r="3.2" fill="currentColor"/></svg></button></div>
         </div>
         <div class="box" id="bPool">
           <div class="stamp" aria-hidden="true"><span>Keine Verbindung</span></div>
           <div class="bh"><svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--accent)" stroke-width="2"/><g class="rotor"><path d="M15 15 L15 5 A10 10 0 0 1 23 10 Z M15 15 L25 18 A10 10 0 0 1 18 25 Z M15 15 L8 22 A10 10 0 0 1 5 12 Z" fill="var(--accent)"/></g></svg><h3>Poolpumpe</h3></div>
-          <div class="val">–</div><div class="foot"><span class="lamp"></span><span>–</span></div>
+          <div class="val">–</div><div class="foot"><span class="lamp"></span><span class="ft">–</span><button type="button" class="eye" data-k="pool" hidden aria-label="Details öffnen (halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path d="M5 15 Q15 6 25 15 Q15 24 5 15 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="15" cy="15" r="3.2" fill="currentColor"/></svg></button></div>
         </div>
         <div class="box derived" id="bRest">
           <div class="bh"><svg viewBox="0 0 30 30"><path d="M4 15 L15 5 L26 15 M7 13 V26 H23 V13" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/><rect x="13" y="18" width="5" height="8" fill="var(--accent)"/></svg><h3>Restverbraucher</h3></div>
-          <div class="val">–</div><div class="foot"><span>–</span></div>
+          <div class="val">–</div><div class="foot"><span class="ft">–</span><button type="button" class="eye" data-k="rest" hidden aria-label="Details öffnen (halten)"><svg viewBox="0 0 30 30" aria-hidden="true"><circle class="ring" cx="15" cy="15" r="13"/><path d="M5 15 Q15 6 25 15 Q15 24 5 15 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="15" cy="15" r="3.2" fill="currentColor"/></svg></button></div>
         </div>
       </div>
 
@@ -226,13 +237,15 @@ const $ = id => document.getElementById(id);
 const DASH = '–';
 const has = v => v !== null && v !== undefined;
 const two = n => String(n).padStart(2, '0');
+// Zeitstempel: heute nur "HH:MM", sonst "TT.MM. HH:MM" (Platz für das Auge in schmalen Kästen)
 function stamp(sec) {
   if (!has(sec) || sec <= 0) return DASH;
-  const d = new Date(sec * 1000);
-  return `${two(d.getDate())}.${two(d.getMonth() + 1)}. ${two(d.getHours())}:${two(d.getMinutes())}`;
+  const d = new Date(sec * 1000), hm = `${two(d.getHours())}:${two(d.getMinutes())}`;
+  return d.toDateString() === new Date().toDateString() ? hm : `${two(d.getDate())}.${two(d.getMonth() + 1)}. ${hm}`;
 }
 const txt = o => o && has(o.txt) ? String(o.txt) : DASH;
-let THR = 10;
+let THR = 10, holdMs = 2000;
+const targets = {};
 const flows = o => !!o && o.online === true && has(o.power) && o.power > THR;
 
 // Verbindung je Kasten: grün ok, rot mit Stempel und "Stand …", neutral unbekannt
@@ -243,13 +256,22 @@ function setConn(el, o) {
   const f = el.querySelector('.foot'); if (!f) return;
   f.classList.toggle('ok', c === true);
   f.classList.toggle('lost', c === false);
-  const t = f.querySelector('span:last-child');
+  const t = f.querySelector('.ft');
   t.textContent = c === true ? 'verbunden · ' + stamp(o.ts)
     : c === false ? 'Stand ' + stamp(o.ts) : 'Verbindung unbekannt';
 }
 
 function render(m) {
   if (m.ui && has(m.ui.thr)) THR = Number(m.ui.thr);
+  if (m.ui && has(m.ui.hold)) holdMs = Math.max(0, Math.round(Number(m.ui.hold))) * 1000;
+  // Ziel des Auges je Kasten; ohne Ziel kein Auge
+  const cons0 = m.cons || {};
+  const src = { pv3: m.pv3, pv6: m.pv6, wr: m.wr, brunnen: cons0.brunnen, hww: cons0.hww, pool: cons0.pool, rest: m.rest };
+  document.querySelectorAll('.eye').forEach(b => {
+    const o = src[b.dataset.k];
+    targets[b.dataset.k] = o && has(o.cfg) ? Number(o.cfg) : null;
+    b.hidden = targets[b.dataset.k] === null;
+  });
   // PV
   [['pv3', 'bPv3', 'vPv3', 'pPv3'], ['pv6', 'bPv6', 'vPv6', 'pPv6']].forEach(([k, b, v, p]) => {
     setConn($(b), m[k]); $(v).textContent = txt(m[k]);
@@ -291,7 +313,7 @@ function render(m) {
   });
   const r = m.rest || {}, rb = $('bRest');
   rb.querySelector('.val').textContent = txt(r);
-  rb.querySelector('.foot span').textContent = has(r.txt) ? 'berechnet'
+  rb.querySelector('.foot .ft').textContent = has(r.txt) ? 'berechnet'
     : 'unvollständig' + (r.missing && r.missing.length ? ': ' + r.missing.join(', ') : '');
   rb.classList.toggle('run', has(r.txt) && has(r.power) && r.power > THR);
 
@@ -304,7 +326,36 @@ function render(m) {
   $('tTime').textContent = 'Stand ' + stamp(m.ts);
 }
 
-// Nur Nachrichten unseres Moduls annehmen (Vertrag energie v1: pv3, wr, cons).
+// Auge: Ziel-ID (cfg) und Haltezeit (ui.hold) kommen vom Modul; 0 s = Öffnen per kurzem Antippen.
+// Halten -> openObject(cfg); Loslassen oder Verrutschen > 10 px bricht ab (wie Zahnrad der PoolKachel).
+const MOVE_PX = 10;
+document.querySelectorAll('.eye').forEach(g => {
+  let timer = null, armed = false, x0 = 0, y0 = 0;
+  const target = () => targets[g.dataset.k];
+  const open = () => {
+    if (typeof openObject === 'function') openObject(target());
+    else console.warn('EnergieKachel: openObject nicht verfügbar');
+  };
+  const cancel = () => { clearTimeout(timer); timer = null; armed = false; g.classList.remove('hold'); };
+  g.addEventListener('pointerdown', e => {
+    if (target() === null || target() === undefined) return;
+    e.preventDefault();
+    try { g.setPointerCapture(e.pointerId); } catch (err) { /* nicht kritisch */ }
+    x0 = e.clientX; y0 = e.clientY;
+    if (holdMs === 0) { armed = true; return; }   // sofort: öffnet beim Loslassen ohne Verrutschen
+    g.style.setProperty('--hold', holdMs + 'ms');
+    g.classList.add('hold');
+    timer = setTimeout(() => { cancel(); open(); }, holdMs);
+  });
+  g.addEventListener('pointermove', e => {
+    if ((timer || armed) && Math.hypot(e.clientX - x0, e.clientY - y0) > MOVE_PX) cancel();
+  });
+  g.addEventListener('pointerup', () => { const tap = armed; cancel(); if (tap) open(); });
+  ['pointercancel', 'lostpointercapture'].forEach(ev => g.addEventListener(ev, cancel));
+  g.addEventListener('contextmenu', e => e.preventDefault());
+});
+
+// Nur Nachrichten unseres Moduls annehmen (Vertrag energie v2: pv3, wr, cons).
 // Alles andere wird verworfen, die letzte gültige Anzeige bleibt stehen.
 function isOwnMessage(m) {
   return m !== null && typeof m === 'object'

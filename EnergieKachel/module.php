@@ -5,13 +5,14 @@ declare(strict_types=1);
 /**
  * EnergieKachel - HTML-SDK-Kachel Energiefluss einer Inselanlage
  * PV 3 kW und PV 6 kW -> Hybrid-WR mit Batterie -> Verbrauch -> Brunnenpumpe, Hauswasserwerk, Poolpumpe, Rest.
- * Nur Anzeige, keine Bedienung. Das Modul selbst schreibt nie.
+ * Anzeige + Auge je Kasten, das per openObject eine frei wählbare Detailansicht öffnet. Das Modul selbst schreibt nie.
  *
  * Hannes Hacker - KNX Werkstatt
- * Version: v1
- * Erstellt: 16.11.2026, 20:58
+ * Version: v2
+ * Erstellt: 16.11.2026, 21:17
+ * v2: Auge (Detailansicht) für alle 7 Kästen; Ziel je Kasten im Instanzformular, Haltezeit wie Zahnrad (ui.hold).
  *
- * Grundlage: energie_variablenliste_v1.md, energie_nachrichtenvertrag_v1.md, Aufbau wie PoolKachel v2
+ * Grundlage: energie_variablenliste_v2.md, energie_nachrichtenvertrag_v2.md, Aufbau wie PoolKachel v2
  * - Alle Quellvariablen werden im Instanzformular ausgewählt, keine IDs im Code.
  * - Bei jeder Aktualisierung einer Quellvariable wird der komplette Zustand an die Kachel geschickt.
  * - Anzeigetexte 1:1 per GetValueFormatted; einzige Ausnahme: Restverbrauch (keine Variable), fest formatiert.
@@ -28,6 +29,12 @@ class EnergieKachel extends IPSModule
         'brunnen' => [['WellPower1', 'WellPower2'], 'WellOnline', 'Brunnenpumpe'],
         'hww'     => [['HousePower'], 'HouseOnline', 'Hauswasserwerk'],
         'pool'    => [['PoolPower'], 'PoolOnline', 'Poolpumpe']
+    ];
+
+    // Detailansicht (Auge) je Kasten: Schlüssel => Eigenschaft; 0 = kein Auge
+    private const DETAILS = [
+        'pv3' => 'Pv3Details', 'pv6' => 'Pv6Details', 'wr' => 'WrDetails',
+        'brunnen' => 'WellDetails', 'hww' => 'HouseDetails', 'pool' => 'PoolDetails', 'rest' => 'RestDetails'
     ];
 
     // Eigenschaften, deren Variablen beobachtet werden (VM_UPDATE)
@@ -52,6 +59,14 @@ class EnergieKachel extends IPSModule
         foreach (self::SOURCES as [$powers, $online, $name]) {
             $this->RegisterPropertyBoolean($online . 'Invert', false);
         }
+
+        // Detailansicht je Kasten (Dummy-Instanz/Kategorie mit Links); 0 = kein Auge
+        foreach (self::DETAILS as $property) {
+            $this->RegisterPropertyInteger($property, 0);
+        }
+
+        // Haltezeit Auge in ganzen Sekunden; 0 = Öffnen per kurzem Antippen
+        $this->RegisterPropertyInteger('DetailsHoldSeconds', 2);
 
         // Fluss und Lade-/Entladerichtung erst oberhalb dieser Schwelle (Watt)
         $this->RegisterPropertyFloat('RunThresholdW', 10);
@@ -104,7 +119,7 @@ class EnergieKachel extends IPSModule
     }
 
     /**
-     * Kompletter Zustand nach Nachrichtenvertrag energie v1.
+     * Kompletter Zustand nach Nachrichtenvertrag energie v2.
      */
     private function GetFullUpdateMessage(): string
     {
@@ -164,7 +179,10 @@ class EnergieKachel extends IPSModule
         ];
 
         $message = [
-            'ui'   => ['thr' => $this->ReadPropertyFloat('RunThresholdW')],
+            'ui'   => [
+                'thr'  => $this->ReadPropertyFloat('RunThresholdW'),
+                'hold' => max(0, $this->ReadPropertyInteger('DetailsHoldSeconds'))
+            ],
             'pv3'  => $this->Box('Pv3Power', $online['pv3']),
             'pv6'  => $this->Box('Pv6Power', $online['pv6']),
             'wr'   => $wr,
@@ -181,6 +199,15 @@ class EnergieKachel extends IPSModule
                 'WellPower1', 'WellPower2', 'HousePower', 'PoolPower'
             ])
         ];
+
+        // Ziel des Auges je Kasten
+        foreach (['pv3', 'pv6', 'wr'] as $key) {
+            $message[$key]['cfg'] = $this->ReadObjectID(self::DETAILS[$key]);
+        }
+        foreach (['brunnen', 'hww', 'pool'] as $key) {
+            $message['cons'][$key]['cfg'] = $this->ReadObjectID(self::DETAILS[$key]);
+        }
+        $message['rest']['cfg'] = $this->ReadObjectID(self::DETAILS['rest']);
 
         return json_encode($message);
     }
@@ -257,6 +284,12 @@ class EnergieKachel extends IPSModule
         }
         $value = (bool) $value;
         return $this->ReadPropertyBoolean($invertProperty) ? !$value : $value;
+    }
+
+    private function ReadObjectID(string $property): ?int
+    {
+        $objectID = $this->ReadPropertyInteger($property);
+        return ($objectID > 0 && IPS_ObjectExists($objectID)) ? $objectID : null;
     }
 
     private function SumOrNull(array $values): ?float
